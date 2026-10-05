@@ -169,10 +169,14 @@ Toda a comunicação com o WhatsApp acontece através da **Graph API da Meta**:
   * *Meta for Developers > WhatsApp > API Setup > To (Destinatário) > Manage phone number list*.
 - Em modo de produção (com número próprio registrado e empresa verificada), é possível disparar para qualquer número válido.
 
-### 3. Template Padrão de Teste
-A Meta fornece por padrão o template:
-- Nome: `hello_world`
-- Idioma: `en_US`
+### 3. Template Padrão de Teste & Criação de Templates
+- Por padrão de fábrica da Meta: Nome `hello_world`, Idioma `en_US`.
+- Quando você criar seus próprios modelos no WhatsApp Manager (ex: `teste` em `pt_BR`), certifique-se de passar exatamente a mesma quantidade de variáveis configuradas.
+
+### 4. Dica Prática de Teste (Mensagem aceita mas não entregue)
+Se a API da Meta responder `message_status: accepted` com sucesso mas a mensagem não tocar no seu telefone:
+- **Primeiro Contato / Janela de 24h**: Pegue o seu celular e envie uma mensagem simples (ex: "oi") para o número da empresa. Isso abre a janela de atendimento de 24 horas e desbloqueia qualquer restrição de entrega inicial.
+- **Formato do Número no Brasil**: A Meta aceita tanto o formato com o 9º dígito (`5534991246376`) quanto sem ele (`553491246376`), convertendo internamente para o ID oficial da conta (`wa_id`).
 
 ---
 
