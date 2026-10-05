@@ -1,0 +1,15 @@
+{
+  "name": "whatsapp-meta-sender",
+  "version": "1.0.0",
+  "description": "Disparador simples de mensagens via WhatsApp Cloud API da Meta",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

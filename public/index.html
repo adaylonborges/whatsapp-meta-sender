@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Meta Sender - Disparos & Testes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 antialiased font-sans">
+
+  <!-- Navbar -->
+  <header class="bg-emerald-600 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <i class="fa-brands fa-whatsapp text-3xl"></i>
+        <div>
+          <h1 class="text-xl font-bold leading-none">WhatsApp Cloud API Sender</h1>
+          <p class="text-xs text-emerald-100 mt-1">Disparos Transacionais e em Massa via Meta Graph API</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="env-status-badge" class="text-xs px-3 py-1 rounded-full bg-emerald-800 text-emerald-200">
+          Carregando credenciais...
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- Card de Credenciais da Meta -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+      <div class="flex justify-between items-center cursor-pointer" onclick="toggleCredentials()">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-key text-emerald-600"></i>
+          <h2 class="font-bold text-slate-700">Credenciais da Meta (Cloud API)</h2>
+          <span class="text-xs text-slate-400 font-normal">(Clique para expandir/ocultar)</span>
+        </div>
+        <i id="cred-chevron" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+      </div>
+
+      <div id="credentials-content" class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">
+            Phone Number ID
+            <span class="text-slate-400 font-normal">(Meta for Developers > WhatsApp > API Setup)</span>
+          </label>
+          <input type="text" id="phone-number-id" placeholder="Ex: 104523958921832"
+            class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">
+            Access Token (Temporário ou de Sistema)
+          </label>
+          <input type="password" id="access-token" placeholder="EAAB..."
+            class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+        <div class="col-span-full flex justify-between items-center pt-2">
+          <p class="text-xs text-slate-500">
+            Você também pode definir essas variáveis no arquivo <code>.env</code> do projeto.
+          </p>
+          <button onclick="saveCredentialsLocal()" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-lg hover:bg-slate-700 transition">
+            <i class="fa-solid fa-save mr-1"></i> Salvar no Navegador
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegação de Abas -->
+    <div class="flex border-b border-slate-200 mb-6 gap-2">
+      <button id="tab-single-btn" onclick="switchTab('single')"
+        class="tab-btn px-4 py-2.5 font-medium text-sm text-emerald-600 border-b-2 border-emerald-600 flex items-center gap-2">
+        <i class="fa-solid fa-paper-plane"></i> Disparo Individual (Transacional)
+      </button>
+      <button id="tab-batch-btn" onclick="switchTab('batch')"
+        class="tab-btn px-4 py-2.5 font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-users"></i> Disparo em Massa (Lote)
+      </button>
+      <button id="tab-logs-btn" onclick="switchTab('logs')"
+        class="tab-btn px-4 py-2.5 font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-clock-rotate-left"></i> Histórico & Webhooks (<span id="log-count">0</span>)
+      </button>
+    </div>
+
+    <!-- ABA 1: DISPARO INDIVIDUAL -->
+    <div id="tab-single" class="tab-pane">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="fa-regular fa-envelope text-emerald-600"></i> Enviar Mensagem Única
+          </h3>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Destinatário (com DDI e DDD)</label>
+              <input type="text" id="single-recipient" placeholder="5511999998888"
+                class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <span class="text-[11px] text-slate-400">Exemplo para o Brasil: 55 + DDD (2 dígitos) + 9 dígitos (ex: 5511999998888).</span>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Mensagem</label>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" name="single-type" value="template" checked onchange="toggleMessageType('single')">
+                  <span>Template HSM (Oficial / Início de Conversa)</span>
+                </label>
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" name="single-type" value="text" onchange="toggleMessageType('single')">
+                  <span>Texto Livre (Apenas dentro da janela de 24h)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Campos do Template -->
+            <div id="single-template-fields" class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Template na Meta</label>
+                  <input type="text" id="single-template-name" value="hello_world" placeholder="ex: hello_world"
+                    class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <span class="text-[10px] text-slate-400">A Meta fornece o template 'hello_world' por padrão para testes.</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Idioma</label>
+                  <select id="single-template-lang" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="pt_BR">Português (Brasil) - pt_BR</option>
+                    <option value="en_US" selected>Inglês (EUA) - en_US</option>
+                    <option value="es_ES">Espanhol - es_ES</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis {{1}}, {{2}}... (opcional, separados por vírgula)</label>
+                <input type="text" id="single-template-params" placeholder="ex: João, 123456"
+                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Campos de Texto Livre -->
+            <div id="single-text-fields" class="hidden space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Texto da Mensagem</label>
+                <textarea id="single-text-message" rows="3" placeholder="Olá! Sua solicitação foi atendida..."
+                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+              </div>
+            </div>
+
+            <button onclick="sendSingleMessage()" id="btn-send-single"
+              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-paper-plane"></i> Enviar Mensagem Agora
+            </button>
+          </div>
+        </div>
+
+        <!-- Painel Lateral Informativo -->
+        <div class="space-y-4">
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-800 space-y-2">
+            <h4 class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> Regras da Meta</h4>
+            <p>1. <strong>Templates</strong> são obrigatórios para iniciar conversa com um cliente que não falou com você nas últimas 24 horas.</p>
+            <p>2. Para ambiente de teste gratuito da Meta, você precisa antes cadastrar os números autorizados no painel da Meta for Developers.</p>
+            <p>3. O template de boas-vindas padrão criado pela Meta se chama <code>hello_world</code> no idioma <code>en_US</code>.</p>
+          </div>
+
+          <div id="single-result-card" class="hidden bg-white border border-slate-200 rounded-xl p-4 text-xs">
+            <h4 class="font-bold text-slate-700 mb-2">Resultado do Disparo</h4>
+            <pre id="single-result-json" class="bg-slate-900 text-emerald-400 p-3 rounded-lg overflow-x-auto text-[11px]"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 2: DISPARO EM MASSA -->
+    <div id="tab-batch" class="tab-pane hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-bullhorn text-emerald-600"></i> Disparo em Massa (Lote)
+        </h3>
+        <p class="text-xs text-slate-500 mb-6">
+          Envie para uma lista de contatos com espaçamento de tempo programado (evita gargalos de rate limit e bloqueios).
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Seletor de Modo de Entrada -->
+            <div class="flex gap-2 p-1 bg-slate-100 rounded-lg">
+              <button type="button" id="btn-mode-manual" onclick="setBatchInputMode('manual')"
+                class="flex-1 py-1.5 text-xs font-semibold rounded-md bg-white shadow-sm text-slate-800 transition">
+                <i class="fa-solid fa-keyboard mr-1"></i> Digitar / Colar
+              </button>
+              <button type="button" id="btn-mode-csv" onclick="setBatchInputMode('csv')"
+                class="flex-1 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-800 transition">
+                <i class="fa-solid fa-file-csv mr-1"></i> Importar Planilha CSV
+              </button>
+            </div>
+
+            <!-- Entrada Manual -->
+            <div id="batch-input-manual">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Lista de Telefones (Um por linha ou separados por vírgula)
+              </label>
+              <textarea id="batch-recipients" rows="6" placeholder="5511999998888&#10;5511988887777&#10;5521977776666"
+                class="w-full text-sm font-mono px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+              <span class="text-[11px] text-slate-400">Total detectado: <strong id="batch-count">0</strong> contatos</span>
+            </div>
+
+            <!-- Entrada por CSV -->
+            <div id="batch-input-csv" class="hidden space-y-3">
+              <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-5 text-center bg-slate-50 hover:bg-emerald-50/30 transition cursor-pointer"
+                   onclick="document.getElementById('csv-file-input').click()">
+                <i class="fa-solid fa-cloud-arrow-up text-3xl text-emerald-600 mb-2"></i>
+                <p class="text-xs font-bold text-slate-700">Clique para selecionar seu arquivo .csv</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Suporta separadores por vírgula (,) ou ponto e vírgula (;)</p>
+                <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleCsvUpload(event)">
+              </div>
+
+              <!-- Prévia do CSV -->
+              <div id="csv-preview-container" class="hidden bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-slate-700"><i class="fa-solid fa-table mr-1 text-emerald-600"></i> <span id="csv-filename">arquivo.csv</span></span>
+                  <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full" id="csv-row-count">0 linhas</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Coluna do Telefone:</label>
+                    <select id="csv-col-phone" onchange="mapCsvColumns()" class="w-full text-xs p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500">
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Coluna Parâmetro {{1}} (Opcional):</label>
+                    <select id="csv-col-param1" onchange="mapCsvColumns()" class="w-full text-xs p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500">
+                      <option value="">Nenhum (usar padrão)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-36 overflow-y-auto border border-slate-200 rounded">
+                  <table class="w-full text-[10px] text-left" id="csv-preview-table">
+                    <!-- Gerado dinamicamente -->
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Intervalo entre cada envio (segundos)</label>
+              <input type="number" id="batch-delay" value="2" min="1" max="60"
+                class="w-32 text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <span class="text-[11px] text-slate-400 ml-2">Recomendado: 2 a 5 segundos por segurança.</span>
+            </div>
+          </div>
+
+          <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Configuração do Conteúdo</h4>
+            
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Template na Meta</label>
+              <input type="text" id="batch-template-name" value="hello_world"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Idioma</label>
+              <select id="batch-template-lang" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="pt_BR">Português (Brasil) - pt_BR</option>
+                <option value="en_US" selected>Inglês (EUA) - en_US</option>
+                <option value="es_ES">Espanhol - es_ES</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis (opcional)</label>
+              <input type="text" id="batch-template-params" placeholder="ex: Mensagem Geral, Promoção"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <button onclick="startBatchSend()" id="btn-send-batch"
+              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-lg transition flex items-center justify-center gap-2 mt-4 shadow-sm">
+              <i class="fa-solid fa-play"></i> Iniciar Disparo em Massa
+            </button>
+          </div>
+        </div>
+
+        <!-- Progresso do Envio em Massa -->
+        <div id="batch-progress-container" class="hidden mt-6 pt-6 border-t border-slate-200">
+          <div class="flex justify-between text-xs font-semibold mb-2">
+            <span>Progresso do Lote</span>
+            <span id="batch-progress-text">Processando...</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-3 mb-4 overflow-hidden">
+            <div id="batch-progress-bar" class="bg-emerald-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+
+          <div id="batch-results-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 3: HISTÓRICO & WEBHOOKS -->
+    <div id="tab-logs" class="tab-pane hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+          <div>
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-satellite-dish text-emerald-600"></i> Eventos em Tempo Real & Webhook
+            </h3>
+            <p class="text-xs text-slate-500">
+              Acompanhe status de entrega (sent, delivered, read) e respostas enviadas pelos clientes.
+            </p>
+          </div>
+          <button onclick="loadLogs()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrows-rotate"></i> Atualizar Agora
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+              <tr>
+                <th class="p-3">Horário</th>
+                <th class="p-3">Tipo de Evento</th>
+                <th class="p-3">Destinatário/Origem</th>
+                <th class="p-3">Detalhes / Resposta</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table-body" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="4" class="p-4 text-center text-slate-400">Nenhum evento registrado ainda.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Inicialização e carregamento de configurações
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSavedCredentials();
+      checkBackendConfig();
+      loadLogs();
+      setInterval(loadLogs, 4000); // Polling a cada 4 segundos
+
+      // Listener para contagem de contatos no lote
+      document.getElementById('batch-recipients').addEventListener('input', updateBatchCount);
+    });
+
+    function toggleCredentials() {
+      const content = document.getElementById('credentials-content');
+      const chevron = document.getElementById('cred-chevron');
+      content.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-180');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('text-emerald-600', 'border-b-2', 'border-emerald-600');
+        el.classList.add('text-slate-500');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tabId}-btn`);
+      activeBtn.classList.add('text-emerald-600', 'border-b-2', 'border-emerald-600');
+      activeBtn.classList.remove('text-slate-500');
+    }
+
+    function toggleMessageType(prefix) {
+      const isTemplate = document.querySelector(`input[name="${prefix}-type"]:checked`).value === 'template';
+      document.getElementById(`${prefix}-template-fields`).classList.toggle('hidden', !isTemplate);
+      document.getElementById(`${prefix}-text-fields`).classList.toggle('hidden', isTemplate);
+    }
+
+    function saveCredentialsLocal() {
+      const phoneId = document.getElementById('phone-number-id').value.trim();
+      const token = document.getElementById('access-token').value.trim();
+      localStorage.setItem('meta_phone_id', phoneId);
+      localStorage.setItem('meta_token', token);
+      alert('Credenciais salvas no armazenamento do seu navegador!');
+      checkBackendConfig();
+    }
+
+    function loadSavedCredentials() {
+      const phoneId = localStorage.getItem('meta_phone_id');
+      const token = localStorage.getItem('meta_token');
+      if (phoneId) document.getElementById('phone-number-id').value = phoneId;
+      if (token) document.getElementById('access-token').value = token;
+    }
+
+    async function checkBackendConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        const badge = document.getElementById('env-status-badge');
+        
+        if (!document.getElementById('phone-number-id').value && data.phoneNumberId) {
+          document.getElementById('phone-number-id').value = data.phoneNumberId;
+        }
+        if (!document.getElementById('access-token').value && data.accessToken) {
+          document.getElementById('access-token').value = data.accessToken;
+        }
+
+        const currentPhone = document.getElementById('phone-number-id').value;
+        const currentToken = document.getElementById('access-token').value;
+
+        if (currentPhone && currentToken) {
+          badge.className = 'text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium';
+          badge.innerHTML = `<i class="fa-solid fa-check mr-1"></i> Credenciais Prontas (.env)`;
+        } else {
+          badge.className = 'text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-medium';
+          badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Informe as Credenciais`;
+        }
+      } catch (err) {
+        console.error('Erro ao verificar config:', err);
+      }
+    }
+
+    function getCredentials() {
+      return {
+        phoneNumberId: document.getElementById('phone-number-id').value.trim(),
+        accessToken: document.getElementById('access-token').value.trim()
+      };
+    }
+
+    // 1. Disparo Único
+    async function sendSingleMessage() {
+      const btn = document.getElementById('btn-send-single');
+      const recipient = document.getElementById('single-recipient').value.trim();
+      const type = document.querySelector('input[name="single-type"]:checked').value;
+      const { phoneNumberId, accessToken } = getCredentials();
+
+      if (!recipient) {
+        alert('Por favor, informe o telefone do destinatário.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
+
+      const payload = {
+        phoneNumberId,
+        accessToken,
+        recipient,
+        type,
+        templateName: document.getElementById('single-template-name').value.trim(),
+        templateLang: document.getElementById('single-template-lang').value,
+        templateParams: document.getElementById('single-template-params').value.split(',').map(s => s.trim()).filter(Boolean),
+        textMessage: document.getElementById('single-text-message').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/send-single', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        document.getElementById('single-result-card').classList.remove('hidden');
+        document.getElementById('single-result-json').innerText = JSON.stringify(data, null, 2);
+
+        if (data.success) {
+          alert('Mensagem enviada com sucesso para a fila da Meta!');
+        } else {
+          alert(`Erro ao enviar: ${data.error}`);
+        }
+      } catch (err) {
+        alert(`Falha de conexão: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar Mensagem Agora`;
+        loadLogs();
+      }
+    }
+
+    // 2. Disparo em Massa & Suporte a CSV
+    let batchInputMode = 'manual'; // 'manual' ou 'csv'
+    let parsedCsvData = { headers: [], rows: [] };
+    let csvMappedContacts = [];
+
+    function setBatchInputMode(mode) {
+      batchInputMode = mode;
+      const isManual = mode === 'manual';
+      document.getElementById('batch-input-manual').classList.toggle('hidden', !isManual);
+      document.getElementById('batch-input-csv').classList.toggle('hidden', isManual);
+
+      const btnManual = document.getElementById('btn-mode-manual');
+      const btnCsv = document.getElementById('btn-mode-csv');
+
+      if (isManual) {
+        btnManual.className = 'flex-1 py-1.5 text-xs font-semibold rounded-md bg-white shadow-sm text-slate-800 transition';
+        btnCsv.className = 'flex-1 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-800 transition';
+      } else {
+        btnCsv.className = 'flex-1 py-1.5 text-xs font-semibold rounded-md bg-white shadow-sm text-slate-800 transition';
+        btnManual.className = 'flex-1 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-800 transition';
+      }
+    }
+
+    function updateBatchCount() {
+      const raw = document.getElementById('batch-recipients').value;
+      const list = raw.split(/[\n,]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length >= 10);
+      const unique = [...new Set(list)];
+      document.getElementById('batch-count').innerText = unique.length;
+    }
+
+    function handleCsvUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('csv-filename').innerText = file.name;
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const text = e.target.result;
+        parsedCsvData = parseCsvText(text);
+
+        if (parsedCsvData.rows.length === 0) {
+          alert('Arquivo CSV vazio ou sem linhas de dados.');
+          return;
+        }
+
+        document.getElementById('csv-preview-container').classList.remove('hidden');
+        document.getElementById('csv-row-count').innerText = `${parsedCsvData.rows.length} contatos encontrados`;
+
+        // Preencher selects de colunas
+        const colPhoneSelect = document.getElementById('csv-col-phone');
+        const colParam1Select = document.getElementById('csv-col-param1');
+
+        colPhoneSelect.innerHTML = '';
+        colParam1Select.innerHTML = '<option value="">Nenhum (usar padrão)</option>';
+
+        parsedCsvData.headers.forEach((h, idx) => {
+          const opt1 = new Option(h, idx);
+          const opt2 = new Option(h, idx);
+          colPhoneSelect.add(opt1);
+          colParam1Select.add(opt2);
+
+          // Tentar detectar automaticamente a coluna do telefone e nome
+          const lowerH = h.toLowerCase();
+          if (lowerH.includes('tel') || lowerH.includes('phone') || lowerH.includes('cel') || lowerH.includes('numero') || lowerH.includes('whatsapp')) {
+            colPhoneSelect.value = idx;
+          }
+          if (lowerH.includes('nome') || lowerH.includes('name') || lowerH.includes('cliente')) {
+            colParam1Select.value = idx;
+          }
+        });
+
+        mapCsvColumns();
+      };
+
+      reader.readAsText(file);
+    }
+
+    function parseCsvText(text) {
+      // Identificar separador (vírgula ou ponto-e-vírgula)
+      const firstLine = text.split('\n')[0] || '';
+      const separator = firstLine.includes(';') ? ';' : ',';
+
+      const lines = text.split(/\r\n|\n/).filter(line => line.trim().length > 0);
+      if (lines.length === 0) return { headers: [], rows: [] };
+
+      const headers = lines[0].split(separator).map(s => s.replace(/(^["']|["']$)/g, '').trim());
+      const rows = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(separator).map(s => s.replace(/(^["']|["']$)/g, '').trim());
+        if (cols.length >= headers.length) {
+          rows.push(cols);
+        }
+      }
+
+      return { headers, rows };
+    }
+
+    function mapCsvColumns() {
+      const phoneIdx = parseInt(document.getElementById('csv-col-phone').value, 10);
+      const param1Idx = document.getElementById('csv-col-param1').value !== '' 
+        ? parseInt(document.getElementById('csv-col-param1').value, 10) 
+        : null;
+
+      csvMappedContacts = [];
+      const previewRows = parsedCsvData.rows.slice(0, 5);
+
+      const table = document.getElementById('csv-preview-table');
+      table.innerHTML = `
+        <thead class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="p-1.5">Telefone Detectado</th>
+            <th class="p-1.5">Parâmetro {{1}}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          ${previewRows.map(row => {
+            const phone = (row[phoneIdx] || '').replace(/\D/g, '');
+            const param = param1Idx !== null ? (row[param1Idx] || '') : '-';
+            return `<tr><td class="p-1.5 font-mono text-emerald-700">${phone}</td><td class="p-1.5 text-slate-600">${param}</td></tr>`;
+          }).join('')}
+        </tbody>
+      `;
+
+      parsedCsvData.rows.forEach(row => {
+        const cleanPhone = (row[phoneIdx] || '').replace(/\D/g, '');
+        if (cleanPhone.length >= 10) {
+          const params = [];
+          if (param1Idx !== null && row[param1Idx]) {
+            params.push(row[param1Idx]);
+          }
+          csvMappedContacts.push({
+            phone: cleanPhone,
+            params: params
+          });
+        }
+      });
+    }
+
+    async function startBatchSend() {
+      let recipientsList = [];
+
+      if (batchInputMode === 'manual') {
+        const raw = document.getElementById('batch-recipients').value;
+        const numbers = raw.split(/[\n,]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length >= 10);
+        recipientsList = [...new Set(numbers)];
+      } else {
+        recipientsList = csvMappedContacts;
+      }
+
+      if (recipientsList.length === 0) {
+        alert(batchInputMode === 'manual' 
+          ? 'Informe pelo menos um número de telefone válido.' 
+          : 'Nenhum contato válido encontrado no arquivo CSV.');
+        return;
+      }
+
+      const { phoneNumberId, accessToken } = getCredentials();
+      const btn = document.getElementById('btn-send-batch');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Processando lote...`;
+
+      const progressContainer = document.getElementById('batch-progress-container');
+      const progressBar = document.getElementById('batch-progress-bar');
+      const progressText = document.getElementById('batch-progress-text');
+      const resultsList = document.getElementById('batch-results-list');
+
+      progressContainer.classList.remove('hidden');
+      progressBar.style.width = '20%';
+      progressText.innerText = `Enviando para ${recipientsList.length} contatos...`;
+      resultsList.innerHTML = '';
+
+      const payload = {
+        phoneNumberId,
+        accessToken,
+        recipients: recipientsList,
+        delaySeconds: parseFloat(document.getElementById('batch-delay').value) || 2,
+        type: 'template',
+        templateName: document.getElementById('batch-template-name').value.trim(),
+        templateLang: document.getElementById('batch-template-lang').value,
+        templateParams: document.getElementById('batch-template-params').value.split(',').map(s => s.trim()).filter(Boolean)
+      };
+
+      try {
+        const res = await fetch('/api/send-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        progressBar.style.width = '100%';
+        if (data.success) {
+          progressText.innerText = `Concluído: ${data.successful} sucessos, ${data.failed} falhas.`;
+          
+          data.details.forEach(item => {
+            const row = document.createElement('div');
+            const isOk = item.status === 'success';
+            row.className = `p-2 rounded text-xs flex justify-between items-center ${isOk ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`;
+            row.innerHTML = `
+              <span><strong>${item.phone}</strong></span>
+              <span>${isOk ? 'Enviado ✔' : 'Falha: ' + item.error}</span>
+            `;
+            resultsList.appendChild(row);
+          });
+        } else {
+          progressText.innerText = `Erro: ${data.error}`;
+        }
+      } catch (err) {
+        progressText.innerText = `Erro de conexão: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-play"></i> Iniciar Disparo em Massa`;
+        loadLogs();
+      }
+    }
+
+    // 3. Carregar Logs
+    async function loadLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        const logs = data.logs || [];
+        document.getElementById('log-count').innerText = logs.length;
+
+        const tbody = document.getElementById('logs-table-body');
+        if (logs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhum evento registrado ainda.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+          let badgeColor = 'bg-slate-100 text-slate-700';
+          let label = log.type;
+
+          if (log.type === 'send_single') {
+            badgeColor = 'bg-blue-100 text-blue-800';
+            label = 'Disparo Único';
+          } else if (log.type === 'send_batch') {
+            badgeColor = 'bg-purple-100 text-purple-800';
+            label = 'Disparo Lote';
+          } else if (log.type === 'webhook_status') {
+            badgeColor = 'bg-emerald-100 text-emerald-800';
+            label = `Status: ${log.details.status}`;
+          } else if (log.type === 'webhook_incoming_message') {
+            badgeColor = 'bg-amber-100 text-amber-800';
+            label = 'Msg Recebida';
+          } else if (log.type === 'error') {
+            badgeColor = 'bg-red-100 text-red-800';
+            label = 'Erro API';
+          }
+
+          const recipient = log.details.recipient || log.details.phone || log.details.recipient_id || log.details.from || '-';
+          const details = JSON.stringify(log.details);
+
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 text-slate-400">${log.timestamp}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${badgeColor}">${label}</span></td>
+              <td class="p-3 font-mono font-medium text-slate-700">${recipient}</td>
+              <td class="p-3 max-w-xs truncate text-slate-500" title='${details}'>${details}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Erro ao buscar logs:', err);
+      }
+    }
+  </script>
+</body>
+</html>
