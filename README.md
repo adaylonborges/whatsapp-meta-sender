@@ -56,38 +56,93 @@ whatsapp-meta-sender/
 
 ## ⚙️ Pré-requisitos
 
-1. **Node.js** (versão 18 ou superior).
-2. Uma conta de desenvolvedor no portal [Meta for Developers](https://developers.facebook.com/).
-3. Um aplicativo criado do tipo **Business / Empresa** com o produto **WhatsApp** adicionado.
+1. **Node.js** (versão 18 ou superior instalada):
+   - Baixe em: [nodejs.org](https://nodejs.org/) (versão LTS recomendada).
+   - Para verificar no terminal: `node -v` e `npm -v`.
+2. **Git** (opcional, para clonar):
+   - Baixe em: [git-scm.com](https://git-scm.com/).
+3. Uma conta no [Meta for Developers](https://developers.facebook.com/) com um app configurado para o WhatsApp Cloud API.
 
 ---
 
-## 🚀 Instalação e Execução
+## 🚀 Instalação e Execução na Máquina Local
 
-### 1. Clonar ou copiar a pasta do projeto:
-```bash
-cd whatsapp-meta-sender
-```
+Escolha o sistema operacional correspondente:
 
-### 2. Instalar dependências:
-```bash
-npm install
-```
+### 🍎 No macOS ou Linux
 
-### 3. Configurar variáveis de ambiente:
-Crie ou edite o arquivo `.env` com suas credenciais obtidas no painel da Meta:
+1. **Abra o Terminal** e clone o repositório (ou acesse a pasta descompactada):
+   ```bash
+   git clone https://github.com/adaylonborges/whatsapp-meta-sender.git
+   cd whatsapp-meta-sender
+   ```
+
+2. **Copie o arquivo de exemplo de ambiente**:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Instale as dependências**:
+   ```bash
+   npm install
+   ```
+
+4. **Inicie o servidor**:
+   ```bash
+   npm start
+   ```
+
+---
+
+### 🪟 No Windows (PowerShell ou Prompt de Comando)
+
+1. **Abra o PowerShell** ou **CMD** e clone o repositório (ou acesse a pasta onde baixou o projeto):
+   ```powershell
+   git clone https://github.com/adaylonborges/whatsapp-meta-sender.git
+   cd whatsapp-meta-sender
+   ```
+
+2. **Crie o arquivo de ambiente `.env`**:
+   - No **PowerShell**:
+     ```powershell
+     Copy-Item .env.example .env
+     ```
+   - No **CMD**:
+     ```cmd
+     copy .env.example .env
+     ```
+
+3. **Instale as dependências**:
+   ```powershell
+   npm install
+   ```
+
+4. **Inicie o servidor**:
+   ```powershell
+   npm start
+   ```
+
+---
+
+### 🔑 Configuração das Credenciais da Meta
+
+Abra o arquivo `.env` recém-criado em qualquer editor (VS Code, Bloco de Notas, etc.) e preencha com seus dados:
+
 ```env
+# ID do Número encontrado em: Meta for Developers > WhatsApp > API Setup
 META_PHONE_NUMBER_ID=seu_phone_number_id_aqui
+
+# Token de Acesso temporário (24h) ou permanente (System User)
 META_ACCESS_TOKEN=seu_access_token_aqui
+
 PORT=3000
 WEBHOOK_VERIFY_TOKEN=meu_token_secreto_webhook_123
 ```
 
-### 4. Iniciar a aplicação:
-```bash
-npm start
-```
-Acesse no seu navegador: **`http://localhost:3000`**
+> **Dica**: Você também pode deixar o `.env` vazio e preencher o *Phone Number ID* e o *Access Token* diretamente no topo da tela do navegador, clicando no botão **"Salvar no Navegador"**!
+
+Acesse no navegador:
+👉 **[http://localhost:3000](http://localhost:3000)**
 
 ---
 
