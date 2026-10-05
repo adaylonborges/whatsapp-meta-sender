@@ -228,7 +228,7 @@ app.post('/api/send-batch', async (req, res) => {
 
     res.json({
       success: true,
-      total: cleanRecipients.length,
+      total: normalizedRecipients.length,
       successful: results.filter(r => r.status === 'success').length,
       failed: results.filter(r => r.status === 'failed').length,
       details: results
