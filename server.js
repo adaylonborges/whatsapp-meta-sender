@@ -98,6 +98,7 @@ app.get('/api/templates', async (req, res) => {
 
       const headerFormat = headerComponent?.format || null;
       const requiresImage = headerFormat === 'IMAGE';
+      const defaultImageUrl = headerComponent?.example?.header_handle?.[0] || null;
 
       const bodyText = bodyComponent?.text || '';
       const variableMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
@@ -110,6 +111,7 @@ app.get('/api/templates', async (req, res) => {
         category: t.category,
         requiresImage,
         headerFormat,
+        defaultImageUrl,
         variableCount,
         hasButtons: !!buttonComponent,
         previewText: bodyText.substring(0, 100)
