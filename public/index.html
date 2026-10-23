@@ -104,14 +104,18 @@
 
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Mensagem</label>
-              <div class="flex gap-4">
+              <div class="flex flex-wrap gap-4">
                 <label class="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="radio" name="single-type" value="template" checked onchange="toggleMessageType('single')">
-                  <span>Template HSM (Oficial / Início de Conversa)</span>
+                  <span>Template HSM (Oficial)</span>
+                </label>
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" name="single-type" value="image" onchange="toggleMessageType('single')">
+                  <span>Imagem Direta (Janela 24h)</span>
                 </label>
                 <label class="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="radio" name="single-type" value="text" onchange="toggleMessageType('single')">
-                  <span>Texto Livre (Apenas dentro da janela de 24h)</span>
+                  <span>Texto Livre (Janela 24h)</span>
                 </label>
               </div>
             </div>
@@ -136,8 +140,30 @@
               </div>
 
               <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">URL da Imagem de Cabeçalho (Opcional - caso o template tenha Header de Mídia)</label>
+                <input type="url" id="single-template-header-image" placeholder="https://exemplo.com/banner.jpg"
+                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <span class="text-[10px] text-slate-400">URL pública da imagem (jpg, png) para templates com cabeçalho de mídia.</span>
+              </div>
+
+              <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis {{1}}, {{2}}... (opcional, separados por vírgula)</label>
                 <input type="text" id="single-template-params" placeholder="ex: João, 123456"
+                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Campos de Imagem Direta -->
+            <div id="single-image-fields" class="hidden space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">URL Pública da Imagem *</label>
+                <input type="url" id="single-image-url" placeholder="https://exemplo.com/imagem.png"
+                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <span class="text-[10px] text-slate-400">Deve ser uma URL acessível diretamente pela Meta (JPG ou PNG).</span>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Legenda da Imagem (Opcional)</label>
+                <input type="text" id="single-image-caption" placeholder="Ex: Confira nossa nova coleção!"
                   class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
               </div>
             </div>
@@ -237,6 +263,12 @@
                       <option value="">Nenhum (usar padrão)</option>
                     </select>
                   </div>
+                  <div class="col-span-2">
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Coluna Imagem de Cabeçalho / Link (Opcional):</label>
+                    <select id="csv-col-header-image" onchange="mapCsvColumns()" class="w-full text-xs p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500">
+                      <option value="">Nenhum (usar URL global abaixo)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div class="overflow-x-auto max-h-36 overflow-y-auto border border-slate-200 rounded">
@@ -271,6 +303,13 @@
                 <option value="en_US">Inglês (EUA) - en_US</option>
                 <option value="es_ES">Espanhol - es_ES</option>
               </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">URL Imagem do Cabeçalho (Opcional)</label>
+              <input type="url" id="batch-header-image" placeholder="https://exemplo.com/banner-promocional.jpg"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <span class="text-[10px] text-slate-400">Usada se o template contiver header de imagem (ou como fallback caso o CSV não defina link por linha).</span>
             </div>
 
             <div>
@@ -373,9 +412,10 @@
     }
 
     function toggleMessageType(prefix) {
-      const isTemplate = document.querySelector(`input[name="${prefix}-type"]:checked`).value === 'template';
-      document.getElementById(`${prefix}-template-fields`).classList.toggle('hidden', !isTemplate);
-      document.getElementById(`${prefix}-text-fields`).classList.toggle('hidden', isTemplate);
+      const type = document.querySelector(`input[name="${prefix}-type"]:checked`).value;
+      document.getElementById(`${prefix}-template-fields`).classList.toggle('hidden', type !== 'template');
+      document.getElementById(`${prefix}-image-fields`).classList.toggle('hidden', type !== 'image');
+      document.getElementById(`${prefix}-text-fields`).classList.toggle('hidden', type !== 'text');
     }
 
     function saveCredentialsLocal() {
@@ -452,6 +492,9 @@
         templateName: document.getElementById('single-template-name').value.trim(),
         templateLang: document.getElementById('single-template-lang').value,
         templateParams: document.getElementById('single-template-params').value.split(',').map(s => s.trim()).filter(Boolean),
+        headerImageUrl: document.getElementById('single-template-header-image').value.trim(),
+        imageUrl: document.getElementById('single-image-url').value.trim(),
+        imageCaption: document.getElementById('single-image-caption').value.trim(),
         textMessage: document.getElementById('single-text-message').value.trim()
       };
 
@@ -532,23 +575,30 @@
         // Preencher selects de colunas
         const colPhoneSelect = document.getElementById('csv-col-phone');
         const colParam1Select = document.getElementById('csv-col-param1');
+        const colHeaderImgSelect = document.getElementById('csv-col-header-image');
 
         colPhoneSelect.innerHTML = '';
         colParam1Select.innerHTML = '<option value="">Nenhum (usar padrão)</option>';
+        colHeaderImgSelect.innerHTML = '<option value="">Nenhum (usar URL global abaixo)</option>';
 
         parsedCsvData.headers.forEach((h, idx) => {
           const opt1 = new Option(h, idx);
           const opt2 = new Option(h, idx);
+          const opt3 = new Option(h, idx);
           colPhoneSelect.add(opt1);
           colParam1Select.add(opt2);
+          colHeaderImgSelect.add(opt3);
 
-          // Tentar detectar automaticamente a coluna do telefone e nome
+          // Tentar detectar automaticamente a coluna do telefone, nome e imagem
           const lowerH = h.toLowerCase();
           if (lowerH.includes('tel') || lowerH.includes('phone') || lowerH.includes('cel') || lowerH.includes('numero') || lowerH.includes('whatsapp')) {
             colPhoneSelect.value = idx;
           }
           if (lowerH.includes('nome') || lowerH.includes('name') || lowerH.includes('cliente')) {
             colParam1Select.value = idx;
+          }
+          if (lowerH.includes('img') || lowerH.includes('imagem') || lowerH.includes('image') || lowerH.includes('foto') || lowerH.includes('banner') || lowerH.includes('url')) {
+            colHeaderImgSelect.value = idx;
           }
         });
 
@@ -584,6 +634,9 @@
       const param1Idx = document.getElementById('csv-col-param1').value !== '' 
         ? parseInt(document.getElementById('csv-col-param1').value, 10) 
         : null;
+      const headerImgIdx = document.getElementById('csv-col-header-image').value !== ''
+        ? parseInt(document.getElementById('csv-col-header-image').value, 10)
+        : null;
 
       csvMappedContacts = [];
       const previewRows = parsedCsvData.rows.slice(0, 5);
@@ -594,13 +647,15 @@
           <tr>
             <th class="p-1.5">Telefone Detectado</th>
             <th class="p-1.5">Parâmetro {{1}}</th>
+            <th class="p-1.5">Imagem Header</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           ${previewRows.map(row => {
             const phone = (row[phoneIdx] || '').replace(/\D/g, '');
             const param = param1Idx !== null ? (row[param1Idx] || '') : '-';
-            return `<tr><td class="p-1.5 font-mono text-emerald-700">${phone}</td><td class="p-1.5 text-slate-600">${param}</td></tr>`;
+            const imgUrl = headerImgIdx !== null ? (row[headerImgIdx] || '') : '-';
+            return `<tr><td class="p-1.5 font-mono text-emerald-700">${phone}</td><td class="p-1.5 text-slate-600">${param}</td><td class="p-1.5 text-slate-500 truncate max-w-[120px]">${imgUrl}</td></tr>`;
           }).join('')}
         </tbody>
       `;
@@ -612,10 +667,14 @@
           if (param1Idx !== null && row[param1Idx]) {
             params.push(row[param1Idx]);
           }
-          csvMappedContacts.push({
+          const item = {
             phone: cleanPhone,
             params: params
-          });
+          };
+          if (headerImgIdx !== null && row[headerImgIdx]) {
+            item.headerImageUrl = row[headerImgIdx].trim();
+          }
+          csvMappedContacts.push(item);
         }
       });
     }
@@ -661,7 +720,8 @@
         type: 'template',
         templateName: document.getElementById('batch-template-name').value.trim(),
         templateLang: document.getElementById('batch-template-lang').value,
-        templateParams: document.getElementById('batch-template-params').value.split(',').map(s => s.trim()).filter(Boolean)
+        templateParams: document.getElementById('batch-template-params').value.split(',').map(s => s.trim()).filter(Boolean),
+        headerImageUrl: document.getElementById('batch-header-image').value.trim()
       };
 
       try {

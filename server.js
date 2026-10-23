@@ -75,11 +75,14 @@ app.post('/api/send-single', async (req, res) => {
       phoneNumberId = process.env.META_PHONE_NUMBER_ID,
       accessToken = process.env.META_ACCESS_TOKEN,
       recipient,
-      type, // 'template' ou 'text'
+      type, // 'template', 'text' ou 'image'
       templateName,
       templateLang = 'pt_BR',
       templateParams = [],
-      textMessage
+      headerImageUrl,
+      textMessage,
+      imageUrl,
+      imageCaption
     } = req.body;
 
     if (!phoneNumberId || !accessToken) {
@@ -106,13 +109,43 @@ app.post('/api/send-single', async (req, res) => {
         language: { code: templateLang }
       };
 
+      const components = [];
+
+      // Imagem no Cabeçalho (Header) do Template (se fornecido)
+      if (headerImageUrl && headerImageUrl.trim()) {
+        components.push({
+          type: 'header',
+          parameters: [
+            {
+              type: 'image',
+              image: { link: headerImageUrl.trim() }
+            }
+          ]
+        });
+      }
+
+      // Parâmetros das variáveis do corpo (Body)
       if (templateParams && templateParams.length > 0) {
-        payload.template.components = [
-          {
-            type: 'body',
-            parameters: templateParams.map(param => ({ type: 'text', text: String(param) }))
-          }
-        ];
+        components.push({
+          type: 'body',
+          parameters: templateParams.map(param => ({ type: 'text', text: String(param) }))
+        });
+      }
+
+      if (components.length > 0) {
+        payload.template.components = components;
+      }
+    } else if (type === 'image') {
+      // Envio de Imagem Direta com legenda opcional (janela de 24h)
+      if (!imageUrl || !imageUrl.trim()) {
+        return res.status(400).json({ success: false, error: 'URL da imagem é obrigatória.' });
+      }
+      payload.type = 'image';
+      payload.image = {
+        link: imageUrl.trim()
+      };
+      if (imageCaption && imageCaption.trim()) {
+        payload.image.caption = imageCaption.trim();
       }
     } else {
       if (!textMessage) {
@@ -148,11 +181,14 @@ app.post('/api/send-batch', async (req, res) => {
     const {
       phoneNumberId = process.env.META_PHONE_NUMBER_ID,
       accessToken = process.env.META_ACCESS_TOKEN,
-      recipients = [], // Array de strings ou linhas
+      recipients = [], // Array de strings ou objetos
       templateName,
       templateLang = 'pt_BR',
       templateParams = [],
+      headerImageUrl,
       textMessage,
+      imageUrl,
+      imageCaption,
       type = 'template',
       delaySeconds = 1 // Intervalo entre mensagens para evitar bloqueio
     } = req.body;
@@ -165,15 +201,25 @@ app.post('/api/send-batch', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Nenhum destinatário informado.' });
     }
 
-    // Normalizar lista de contatos (pode ser array de strings ou array de objetos { phone, params, text })
+    // Normalizar lista de contatos (pode ser array de strings ou array de objetos { phone, params, text, headerImageUrl, imageUrl, imageCaption })
     const normalizedRecipients = recipients.map(item => {
       if (typeof item === 'string') {
-        return { phone: cleanPhoneNumber(item), params: templateParams, text: textMessage };
+        return {
+          phone: cleanPhoneNumber(item),
+          params: templateParams,
+          headerImageUrl: headerImageUrl || null,
+          text: textMessage,
+          imageUrl: imageUrl || null,
+          imageCaption: imageCaption || null
+        };
       }
       return {
         phone: cleanPhoneNumber(item.phone || ''),
         params: item.params && item.params.length > 0 ? item.params : templateParams,
-        text: item.text || textMessage
+        headerImageUrl: item.headerImageUrl || headerImageUrl || null,
+        text: item.text || textMessage,
+        imageUrl: item.imageUrl || imageUrl || null,
+        imageCaption: item.imageCaption || imageCaption || null
       };
     }).filter(item => item.phone && item.phone.length >= 10);
 
@@ -197,14 +243,43 @@ app.post('/api/send-batch', async (req, res) => {
           name: templateName,
           language: { code: templateLang }
         };
+
+        const components = [];
+        const currentHeaderImg = contact.headerImageUrl || headerImageUrl;
+        if (currentHeaderImg && String(currentHeaderImg).trim()) {
+          components.push({
+            type: 'header',
+            parameters: [
+              {
+                type: 'image',
+                image: { link: String(currentHeaderImg).trim() }
+              }
+            ]
+          });
+        }
+
         const currentParams = contact.params || [];
         if (currentParams.length > 0) {
-          payload.template.components = [
-            {
-              type: 'body',
-              parameters: currentParams.map(param => ({ type: 'text', text: String(param) }))
-            }
-          ];
+          components.push({
+            type: 'body',
+            parameters: currentParams.map(param => ({ type: 'text', text: String(param) }))
+          });
+        }
+
+        if (components.length > 0) {
+          payload.template.components = components;
+        }
+      } else if (type === 'image') {
+        const currentImg = contact.imageUrl || imageUrl;
+        if (!currentImg || !String(currentImg).trim()) {
+          results.push({ phone: contact.phone, status: 'failed', error: 'URL da imagem não informada' });
+          continue;
+        }
+        payload.type = 'image';
+        payload.image = { link: String(currentImg).trim() };
+        const currentCaption = contact.imageCaption || imageCaption;
+        if (currentCaption && String(currentCaption).trim()) {
+          payload.image.caption = String(currentCaption).trim();
         }
       } else {
         payload.type = 'text';

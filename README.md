@@ -184,7 +184,7 @@ Se a API da Meta responder `message_status: accepted` com sucesso mas a mensagem
 
 ### 1. `POST /api/send-single`
 Envia mensagem individual (transacional).
-- **Body Exemplo (Template)**:
+- **Body Exemplo (Template simples)**:
   ```json
   {
     "recipient": "5511999998888",
@@ -192,6 +192,26 @@ Envia mensagem individual (transacional).
     "templateName": "hello_world",
     "templateLang": "en_US",
     "templateParams": []
+  }
+  ```
+- **Body Exemplo (Template com Imagem de Cabeçalho/Header)**:
+  ```json
+  {
+    "recipient": "5511999998888",
+    "type": "template",
+    "templateName": "promo_fim_de_ano",
+    "templateLang": "pt_BR",
+    "headerImageUrl": "https://meusite.com.br/banner.jpg",
+    "templateParams": ["João"]
+  }
+  ```
+- **Body Exemplo (Imagem Direta com Legenda - janela de 24h)**:
+  ```json
+  {
+    "recipient": "5511999998888",
+    "type": "image",
+    "imageUrl": "https://meusite.com.br/foto-produto.jpg",
+    "imageCaption": "Veja os detalhes do item solicitado!"
   }
   ```
 - **Body Exemplo (Texto livre para janela de 24h)**:
@@ -204,15 +224,16 @@ Envia mensagem individual (transacional).
   ```
 
 ### 2. `POST /api/send-batch`
-Processa disparos em lote com intervalo de segurança (delay).
-- **Body Exemplo**:
+Processa disparos em lote com intervalo de segurança (delay). Suporta lista simples de telefones ou lista com parâmetros e imagem individual por contato.
+- **Body Exemplo com Imagem de Cabeçalho no Template**:
   ```json
   {
     "recipients": ["5511999998888", "5511988887777"],
     "delaySeconds": 2,
     "type": "template",
-    "templateName": "hello_world",
-    "templateLang": "en_US",
+    "templateName": "promo_spoint",
+    "templateLang": "pt_BR",
+    "headerImageUrl": "https://meusite.com.br/banner-campanha.jpg",
     "templateParams": []
   }
   ```
