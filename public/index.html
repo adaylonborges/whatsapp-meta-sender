@@ -575,13 +575,15 @@
         badge.className = 'mt-2 text-xs p-2.5 rounded-lg border bg-blue-50 text-blue-800 border-blue-200 space-y-1';
         badge.innerHTML = `
           <div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-image text-blue-600"></i> Template COM IMAGEM DE CABEÇALHO</div>
-          <div class="text-[11px] text-blue-700">Este template <strong>obriga</strong> uma imagem direta (.jpg ou .png). Formato <code>webp</code> não é suportado pela Meta.</div>
+          <div class="text-[11px] text-blue-700">Preenchido com o <strong>Media ID oficial aprovado</strong> na Meta (ou informe uma URL .jpg/.png direta).</div>
         `;
         if (headerContainer) headerContainer.classList.remove('opacity-40', 'pointer-events-none');
         if (headerInput) {
           headerInput.disabled = false;
-          headerInput.placeholder = 'https://exemplo.com/banner.jpg ou .png (Obrigatório)';
-          if (tpl.defaultImageUrl && !headerInput.value) {
+          headerInput.placeholder = 'Media ID ou URL https:// (Obrigatório)';
+          if (tpl.defaultMediaId) {
+            headerInput.value = tpl.defaultMediaId;
+          } else if (tpl.defaultImageUrl && !headerInput.value) {
             headerInput.value = tpl.defaultImageUrl;
           }
         }

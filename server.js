@@ -99,6 +99,12 @@ app.get('/api/templates', async (req, res) => {
       const headerFormat = headerComponent?.format || null;
       const requiresImage = headerFormat === 'IMAGE';
       const defaultImageUrl = headerComponent?.example?.header_handle?.[0] || null;
+      
+      const knownMediaIds = {
+        '20261023_wpp_20off_evo_img_pt': '1475671457712153',
+        '20261023_wpp_20off_vomero_img': '3393562647512994'
+      };
+      const defaultMediaId = knownMediaIds[t.name] || null;
 
       const bodyText = bodyComponent?.text || '';
       const variableMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
@@ -112,6 +118,7 @@ app.get('/api/templates', async (req, res) => {
         requiresImage,
         headerFormat,
         defaultImageUrl,
+        defaultMediaId,
         variableCount,
         hasButtons: !!buttonComponent,
         previewText: bodyText.substring(0, 100)
@@ -170,12 +177,14 @@ app.post('/api/send-single', async (req, res) => {
 
       // Imagem no Cabeçalho (Header) do Template (se fornecido)
       if (headerImageUrl && typeof headerImageUrl === 'string' && headerImageUrl.trim().length > 0) {
+        const imgVal = headerImageUrl.trim();
+        const isMediaId = /^\d+$/.test(imgVal);
         components.push({
           type: 'header',
           parameters: [
             {
               type: 'image',
-              image: { link: headerImageUrl.trim() }
+              image: isMediaId ? { id: imgVal } : { link: imgVal }
             }
           ]
         });
@@ -308,12 +317,14 @@ app.post('/api/send-batch', async (req, res) => {
         const components = [];
         const currentHeaderImg = contact.headerImageUrl || headerImageUrl;
         if (currentHeaderImg && String(currentHeaderImg).trim().length > 0) {
+          const imgVal = String(currentHeaderImg).trim();
+          const isMediaId = /^\d+$/.test(imgVal);
           components.push({
             type: 'header',
             parameters: [
               {
                 type: 'image',
-                image: { link: String(currentHeaderImg).trim() }
+                image: isMediaId ? { id: imgVal } : { link: imgVal }
               }
             ]
           });
