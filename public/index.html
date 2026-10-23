@@ -3,37 +3,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Meta Sender - Disparos & Testes</title>
+  <title>WhatsApp Meta Sender - Disparos & Métricas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    [x-cloak] { display: none !important; }
+    /* WhatsApp Phone Mockup Styles */
+    .whatsapp-bg {
+      background-color: #efeae2;
+      background-image: radial-gradient(#d5cdc4 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    .whatsapp-bubble {
+      background-color: #d9fdd3;
+      border-radius: 7.5px 7.5px 2px 7.5px;
+      box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+    }
+    .whatsapp-bubble::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: -8px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid #d9fdd3;
+      border-right: 8px solid transparent;
+    }
+    .whatsapp-header {
+      background-color: #008069;
+    }
+    .phone-notch {
+      width: 120px;
+      height: 18px;
+      background: #1e293b;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 antialiased font-sans">
 
-  <!-- Navbar -->
-  <header class="bg-emerald-600 text-white shadow-md">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3">
+  <!-- Navbar Superior -->
+  <header class="bg-emerald-700 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3">
       <div class="flex items-center gap-3">
-        <i class="fa-brands fa-whatsapp text-3xl"></i>
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white text-2xl shadow-inner">
+          <i class="fa-brands fa-whatsapp"></i>
+        </div>
         <div>
-          <h1 class="text-xl font-bold leading-none">WhatsApp Cloud API Sender</h1>
-          <p class="text-xs text-emerald-100 mt-1">Disparos Transacionais e em Massa via Meta Graph API</p>
+          <h1 class="text-lg font-bold leading-none flex items-center gap-2">
+            WhatsApp Cloud API Sender
+            <span class="text-[10px] bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded-full font-normal">v2.0 Pro</span>
+          </h1>
+          <p class="text-xs text-emerald-100 mt-1">Disparos Transacionais, Lote com CSV, Validação BR e Funil em Tempo Real</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <span id="env-status-badge" class="text-xs px-3 py-1 rounded-full bg-emerald-800 text-emerald-200">
+        <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-800/80 text-emerald-200 flex items-center gap-1.5 border border-emerald-600/50">
+          <i class="fa-solid fa-database text-[10px]"></i> SQLite Persistente
+        </span>
+        <span id="env-status-badge" class="text-xs px-3 py-1 rounded-full bg-emerald-900 text-emerald-200">
           Carregando credenciais...
         </span>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6">
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- DASHBOARD DE FUNIL DE ENTREGA EM TEMPO REAL (ITEM 3 & 4) -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-4 border-b border-slate-100">
+        <div>
+          <h2 class="font-bold text-slate-800 flex items-center gap-2 text-base">
+            <i class="fa-solid fa-chart-simple text-emerald-600"></i> Funil de Entrega & Performance
+          </h2>
+          <p class="text-xs text-slate-500">Métricas consolidadas a partir do banco de dados local e confirmações de Webhook</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="loadMetrics()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrows-rotate"></i> Atualizar Métricas
+          </button>
+          <a href="/api/export-csv" download class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3.5 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+            <i class="fa-solid fa-file-arrow-down"></i> Exportar Relatório CSV
+          </a>
+        </div>
+      </div>
+
+      <!-- Cards de Métricas -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+        <!-- 1. Total Disparados -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between">
+          <div class="flex justify-between items-center text-slate-500 mb-1">
+            <span class="text-xs font-semibold">Total Disparados</span>
+            <i class="fa-solid fa-paper-plane text-slate-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-800" id="metric-total">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Disparos registrados</div>
+        </div>
+
+        <!-- 2. Aceitos Meta -->
+        <div class="bg-blue-50/60 border border-blue-200/70 rounded-xl p-3.5 flex flex-col justify-between">
+          <div class="flex justify-between items-center text-blue-700 mb-1">
+            <span class="text-xs font-semibold">Aceitos Meta</span>
+            <i class="fa-solid fa-check text-blue-500"></i>
+          </div>
+          <div class="text-2xl font-bold text-blue-900" id="metric-accepted">0</div>
+          <div class="text-[11px] text-blue-600 mt-1">Fila da Meta Graph API</div>
+        </div>
+
+        <!-- 3. Entregues -->
+        <div class="bg-emerald-50/60 border border-emerald-200/70 rounded-xl p-3.5 flex flex-col justify-between">
+          <div class="flex justify-between items-center text-emerald-700 mb-1">
+            <span class="text-xs font-semibold">Entregues</span>
+            <i class="fa-solid fa-check-double text-emerald-500"></i>
+          </div>
+          <div class="text-2xl font-bold text-emerald-900" id="metric-delivered">0</div>
+          <div class="text-[11px] text-emerald-600 mt-1"><span id="metric-delivery-rate">0%</span> no aparelho</div>
+        </div>
+
+        <!-- 4. Lidos -->
+        <div class="bg-sky-50/60 border border-sky-200/70 rounded-xl p-3.5 flex flex-col justify-between">
+          <div class="flex justify-between items-center text-sky-700 mb-1">
+            <span class="text-xs font-semibold">Lidos (Blue Tick)</span>
+            <i class="fa-solid fa-check-double text-sky-600"></i>
+          </div>
+          <div class="text-2xl font-bold text-sky-900" id="metric-read">0</div>
+          <div class="text-[11px] text-sky-600 mt-1"><span id="metric-read-rate">0%</span> abertura</div>
+        </div>
+
+        <!-- 5. Falhas -->
+        <div class="bg-rose-50/60 border border-rose-200/70 rounded-xl p-3.5 flex flex-col justify-between col-span-2 md:col-span-1">
+          <div class="flex justify-between items-center text-rose-700 mb-1">
+            <span class="text-xs font-semibold">Falhas / Erros</span>
+            <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+          </div>
+          <div class="text-2xl font-bold text-rose-900" id="metric-failed">0</div>
+          <div class="text-[11px] text-rose-600 mt-1">Rejeitados ou inválidos</div>
+        </div>
+      </div>
+
+      <!-- Barras de Conversão do Funil -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="font-medium text-slate-600">Taxa de Entrega (Entregues / Aceitos):</span>
+            <span class="font-bold text-emerald-700" id="bar-delivery-text">0%</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div id="bar-delivery" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="font-medium text-slate-600">Taxa de Leitura (Lidos / Entregues):</span>
+            <span class="font-bold text-sky-700" id="bar-read-text">0%</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div id="bar-read" class="bg-sky-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Card de Credenciais da Meta -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
       <div class="flex justify-between items-center cursor-pointer" onclick="toggleCredentials()">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-key text-emerald-600"></i>
@@ -71,14 +205,14 @@
     </div>
 
     <!-- Navegação de Abas -->
-    <div class="flex border-b border-slate-200 mb-6 gap-2">
+    <div class="flex border-b border-slate-200 gap-2">
       <button id="tab-single-btn" onclick="switchTab('single')"
         class="tab-btn px-4 py-2.5 font-medium text-sm text-emerald-600 border-b-2 border-emerald-600 flex items-center gap-2">
-        <i class="fa-solid fa-paper-plane"></i> Disparo Individual (Transacional)
+        <i class="fa-solid fa-paper-plane"></i> Disparo Individual & Preview
       </button>
       <button id="tab-batch-btn" onclick="switchTab('batch')"
         class="tab-btn px-4 py-2.5 font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2">
-        <i class="fa-solid fa-users"></i> Disparo em Massa (Lote)
+        <i class="fa-solid fa-users"></i> Disparo em Massa & Sanitizador BR
       </button>
       <button id="tab-logs-btn" onclick="switchTab('logs')"
         class="tab-btn px-4 py-2.5 font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2">
@@ -86,145 +220,288 @@
       </button>
     </div>
 
-    <!-- ABA 1: DISPARO INDIVIDUAL -->
+    <!-- ABA 1: DISPARO INDIVIDUAL & PREVIEW WHATSAPP (ITEM 1, 2, 6) -->
     <div id="tab-single" class="tab-pane">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <i class="fa-regular fa-envelope text-emerald-600"></i> Enviar Mensagem Única
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Coluna da Esquerda: Formulário de Configuração (7 colunas) -->
+        <div class="lg:col-span-7 bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+          <h3 class="font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-regular fa-envelope text-emerald-600"></i> Configurar Mensagem
           </h3>
 
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Destinatário (com DDI e DDD)</label>
-              <input type="text" id="single-recipient" placeholder="5511999998888"
+          <!-- Destinatário com Validador Inteligente BR (Item 6) -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Destinatário (com DDI e DDD)</label>
+            <div class="relative">
+              <input type="text" id="single-recipient" placeholder="5534991246376 ou (34) 99124-6376"
+                oninput="onSingleRecipientInput(this.value)"
                 class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              <span class="text-[11px] text-slate-400">Exemplo para o Brasil: 55 + DDD (2 dígitos) + 9 dígitos (ex: 5511999998888).</span>
+              <span id="single-phone-badge" class="absolute right-2.5 top-2.5 text-[11px] font-semibold text-slate-400">
+                Aguardando número...
+              </span>
             </div>
+            <div id="single-phone-feedback" class="text-[11px] text-slate-400 mt-1">
+              Informe com DDD brasileiro (ex: 34 99124-6376). O DDI 55 será injetado automaticamente se omitido.
+            </div>
+          </div>
 
+          <!-- Seletor do Tipo de Mensagem -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Mensagem</label>
+            <div class="flex flex-wrap gap-4">
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="single-type" value="template" checked onchange="toggleMessageType('single'); updateWhatsAppPreview();">
+                <span>Template HSM (Oficial Meta)</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="single-type" value="image" onchange="toggleMessageType('single'); updateWhatsAppPreview();">
+                <span>Imagem Direta (Janela 24h)</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="single-type" value="text" onchange="toggleMessageType('single'); updateWhatsAppPreview();">
+                <span>Texto Livre (Janela 24h)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Campos do Template -->
+          <div id="single-template-fields" class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Mensagem</label>
-              <div class="flex flex-wrap gap-4">
-                <label class="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="radio" name="single-type" value="template" checked onchange="toggleMessageType('single')">
-                  <span>Template HSM (Oficial)</span>
-                </label>
-                <label class="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="radio" name="single-type" value="image" onchange="toggleMessageType('single')">
-                  <span>Imagem Direta (Janela 24h)</span>
-                </label>
-                <label class="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="radio" name="single-type" value="text" onchange="toggleMessageType('single')">
-                  <span>Texto Livre (Janela 24h)</span>
-                </label>
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-xs font-semibold text-slate-700">Template Aprovado na Meta</label>
+                <button type="button" onclick="loadMetaTemplates()" class="text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-arrows-rotate"></i> Atualizar Templates
+                </button>
               </div>
+              <select id="single-template-select" onchange="onTemplateSelected('single')" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="">Carregando templates da Meta...</option>
+              </select>
+              <input type="text" id="single-template-name" value="20261023_wpp_20off_evo" class="hidden w-full text-sm mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Digite o nome do template...">
+              <div id="single-template-badge" class="mt-2 text-xs p-2.5 rounded-lg border hidden"></div>
             </div>
 
-            <!-- Campos do Template -->
-            <div id="single-template-fields" class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label class="block text-xs font-semibold text-slate-700">Template da Meta</label>
-                  <button type="button" onclick="loadMetaTemplates()" class="text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-arrows-rotate"></i> Atualizar Templates
-                  </button>
-                </div>
-                <select id="single-template-select" onchange="onTemplateSelected('single')" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                  <option value="">Carregando templates da Meta...</option>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Idioma</label>
+                <select id="single-template-lang" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <option value="pt_BR" selected>Português (Brasil) - pt_BR</option>
+                  <option value="en_US">Inglês (EUA) - en_US</option>
+                  <option value="es_ES">Espanhol - es_ES</option>
                 </select>
-                <input type="text" id="single-template-name" value="20261023_wpp_20off_evo" class="hidden w-full text-sm mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Digite o nome do template...">
-                <div id="single-template-badge" class="mt-2 text-xs p-2.5 rounded-lg border hidden"></div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-600 mb-1">Idioma</label>
-                  <select id="single-template-lang" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    <option value="pt_BR" selected>Português (Brasil) - pt_BR</option>
-                    <option value="en_US">Inglês (EUA) - en_US</option>
-                    <option value="es_ES">Espanhol - es_ES</option>
-                  </select>
+              <!-- Upload Direto de Mídia para Cabeçalho (Item 1) -->
+              <div id="single-header-image-container">
+                <label class="block text-xs font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                  <span>Mídia de Cabeçalho</span>
+                  <label for="single-media-upload-input" class="text-[11px] text-emerald-600 hover:text-emerald-800 cursor-pointer font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Direto
+                  </label>
+                </label>
+                
+                <input type="text" id="single-template-header-image" placeholder="Media ID ou URL https://"
+                  oninput="updateWhatsAppPreview()"
+                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                
+                <input type="file" id="single-media-upload-input" accept="image/png, image/jpeg" class="hidden" onchange="handleDirectMediaUpload(event, 'single-template-header-image', 'single-media-status')">
+                
+                <div id="single-media-status" class="hidden mt-1.5 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center justify-between">
+                  <!-- Atualizado via JS -->
                 </div>
-                <div id="single-header-image-container">
-                  <label class="block text-xs font-semibold text-slate-600 mb-1">URL Imagem do Cabeçalho</label>
-                  <input type="url" id="single-template-header-image" placeholder="https://exemplo.com/banner.jpg"
-                    class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                  <span id="single-header-hint" class="text-[10px] text-slate-400">Obrigatório para templates com imagem.</span>
-                </div>
-              </div>
-
-              <div id="single-params-container">
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis {{1}}, {{2}}... (opcional)</label>
-                <input type="text" id="single-template-params" placeholder="ex: João, 123456"
-                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <span id="single-params-hint" class="text-[10px] text-slate-400">Separe por vírgula se houver variáveis no corpo.</span>
+                <span id="single-header-hint" class="text-[10px] text-slate-400 block mt-0.5">Informe o Media ID oficial ou suba uma imagem PNG/JPG.</span>
               </div>
             </div>
 
-            <!-- Campos de Imagem Direta -->
-            <div id="single-image-fields" class="hidden space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">URL Pública da Imagem *</label>
-                <input type="url" id="single-image-url" placeholder="https://exemplo.com/imagem.png"
-                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <span class="text-[10px] text-slate-400">Deve ser uma URL acessível diretamente pela Meta (JPG ou PNG).</span>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Legenda da Imagem (Opcional)</label>
-                <input type="text" id="single-image-caption" placeholder="Ex: Confira nossa nova coleção!"
-                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              </div>
+            <div id="single-params-container">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis {{1}}, {{2}}... (opcional)</label>
+              <input type="text" id="single-template-params" placeholder="ex: João, 123456"
+                oninput="updateWhatsAppPreview()"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <span id="single-params-hint" class="text-[10px] text-slate-400">Separe por vírgula para substituir as variáveis no texto da mensagem.</span>
             </div>
-
-            <!-- Campos de Texto Livre -->
-            <div id="single-text-fields" class="hidden space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Texto da Mensagem</label>
-                <textarea id="single-text-message" rows="3" placeholder="Olá! Sua solicitação foi atendida..."
-                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
-              </div>
-            </div>
-
-            <button onclick="sendSingleMessage()" id="btn-send-single"
-              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
-              <i class="fa-solid fa-paper-plane"></i> Enviar Mensagem Agora
-            </button>
-          </div>
-        </div>
-
-        <!-- Painel Lateral Informativo -->
-        <div class="space-y-4">
-          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-800 space-y-2">
-            <h4 class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> Regras da Meta</h4>
-            <p>1. <strong>Templates</strong> são obrigatórios para iniciar conversa com um cliente que não falou com você nas últimas 24 horas.</p>
-            <p>2. Para ambiente de teste gratuito da Meta, você precisa antes cadastrar os números autorizados no painel da Meta for Developers.</p>
-            <p>3. O template de boas-vindas padrão criado pela Meta se chama <code>hello_world</code> no idioma <code>en_US</code>.</p>
           </div>
 
-          <div id="single-result-card" class="hidden bg-white border border-slate-200 rounded-xl p-4 text-xs">
-            <h4 class="font-bold text-slate-700 mb-2">Resultado do Disparo</h4>
+          <!-- Campos de Imagem Direta -->
+          <div id="single-image-fields" class="hidden space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                <span>URL ou Media ID da Imagem *</span>
+                <label for="single-direct-image-upload" class="text-[11px] text-emerald-600 hover:text-emerald-800 cursor-pointer font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Upload Arquivo
+                </label>
+              </label>
+              <input type="text" id="single-image-url" placeholder="https://exemplo.com/imagem.png ou Media ID"
+                oninput="updateWhatsAppPreview()"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <input type="file" id="single-direct-image-upload" accept="image/png, image/jpeg" class="hidden" onchange="handleDirectMediaUpload(event, 'single-image-url', 'single-direct-status')">
+              <div id="single-direct-status" class="hidden mt-1.5 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center justify-between"></div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Legenda da Imagem (Opcional)</label>
+              <input type="text" id="single-image-caption" placeholder="Ex: Confira nossa nova coleção!"
+                oninput="updateWhatsAppPreview()"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Campos de Texto Livre -->
+          <div id="single-text-fields" class="hidden space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Texto da Mensagem</label>
+              <textarea id="single-text-message" rows="3" placeholder="Olá! Sua solicitação foi atendida..."
+                oninput="updateWhatsAppPreview()"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+            </div>
+          </div>
+
+          <button onclick="sendSingleMessage()" id="btn-send-single"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2 shadow-sm">
+            <i class="fa-solid fa-paper-plane"></i> Enviar Mensagem Agora
+          </button>
+
+          <!-- Resposta do Disparo -->
+          <div id="single-result-card" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs">
+            <h4 class="font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <i class="fa-solid fa-code text-slate-500"></i> Resposta da Meta Graph API
+            </h4>
             <pre id="single-result-json" class="bg-slate-900 text-emerald-400 p-3 rounded-lg overflow-x-auto text-[11px]"></pre>
           </div>
         </div>
+
+        <!-- Coluna da Direita: PREVIEW VISUAL DO WHATSAPP (ITEM 2) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider text-slate-500">
+                <i class="fa-solid fa-mobile-screen text-emerald-600"></i> Prévia Interativa (WhatsApp)
+              </h3>
+              <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Live Mockup</span>
+            </div>
+
+            <!-- Moldura do Celular -->
+            <div class="rounded-[2rem] border-4 border-slate-800 bg-slate-800 p-2 shadow-xl max-w-[340px] mx-auto">
+              <!-- Notch -->
+              <div class="phone-notch mb-1"></div>
+
+              <!-- Tela do Celular -->
+              <div class="rounded-[1.4rem] overflow-hidden flex flex-col h-[480px] whatsapp-bg border border-slate-300/40">
+                
+                <!-- Barra de Status / Topbar do WhatsApp -->
+                <div class="whatsapp-header text-white px-3 py-2 flex items-center justify-between text-xs shadow-sm z-10">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                    <div class="w-7 h-7 rounded-full bg-emerald-900 flex items-center justify-center text-xs font-bold text-white border border-emerald-400/40 overflow-hidden">
+                      <span id="preview-avatar-letter">E</span>
+                    </div>
+                    <div class="leading-tight">
+                      <div class="font-bold text-xs truncate max-w-[130px] flex items-center gap-1" id="preview-contact-name">
+                        <span>EVO</span>
+                        <i class="fa-solid fa-circle-check text-emerald-300 text-[10px]" title="Conta Oficial Verificada"></i>
+                      </div>
+                      <div class="text-[9px] text-emerald-200">Online</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 text-slate-100">
+                    <i class="fa-solid fa-video text-[11px]"></i>
+                    <i class="fa-solid fa-phone text-[11px]"></i>
+                    <i class="fa-solid fa-ellipsis-vertical text-[11px]"></i>
+                  </div>
+                </div>
+
+                <!-- Área da Conversa -->
+                <div class="flex-1 p-3 overflow-y-auto space-y-2 flex flex-col justify-end">
+                  
+                  <!-- Tag de Criptografia do WhatsApp -->
+                  <div class="text-center my-1">
+                    <span class="text-[9px] bg-amber-100/80 text-amber-900 px-2 py-0.5 rounded shadow-sm">
+                      🔒 As mensagens são protegidas com a criptografia de ponta a ponta.
+                    </span>
+                  </div>
+
+                  <!-- Balão de Mensagem do WhatsApp -->
+                  <div class="whatsapp-bubble p-2 max-w-[92%] ml-auto text-xs text-slate-800 relative space-y-1.5">
+                    
+                    <!-- Imagem do Cabeçalho no Mockup -->
+                    <div id="preview-media-container" class="rounded-lg overflow-hidden border border-emerald-800/10 bg-slate-200 max-h-40 hidden flex items-center justify-center">
+                      <img id="preview-media-img" src="" alt="Imagem do Header" class="w-full h-auto object-cover max-h-40 hidden">
+                      <div id="preview-media-placeholder" class="p-4 text-center text-slate-500 text-[11px] flex flex-col items-center gap-1">
+                        <i class="fa-solid fa-image text-2xl text-slate-400"></i>
+                        <span>[Imagem de Cabeçalho da Meta]</span>
+                      </div>
+                    </div>
+
+                    <!-- Texto do Corpo -->
+                    <div id="preview-body-text" class="whitespace-pre-line text-[11.5px] leading-relaxed text-slate-800">
+                      Carregando texto do template...
+                    </div>
+
+                    <!-- Rodapé com Horário e Blue Tick -->
+                    <div class="flex justify-end items-center gap-1 text-[9px] text-slate-500 pt-0.5">
+                      <span id="preview-timestamp">12:00</span>
+                      <i class="fa-solid fa-check-double text-sky-500 text-[10px]"></i>
+                    </div>
+
+                    <!-- Botões de Ação do Template (CTA / Quick Reply) -->
+                    <div id="preview-buttons-container" class="border-t border-emerald-600/10 pt-1.5 space-y-1 text-center">
+                      <!-- Renderizado via JS -->
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Barra Inferior de Entrada (Decorativa do WhatsApp) -->
+                <div class="bg-[#f0f2f5] p-1.5 flex items-center gap-2 border-t border-slate-200">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-slate-500 text-xs">
+                    <i class="fa-regular fa-face-smile"></i>
+                  </div>
+                  <div class="flex-1 bg-white rounded-full px-3 py-1 text-[11px] text-slate-400 shadow-inner">
+                    Mensagem
+                  </div>
+                  <div class="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs">
+                    <i class="fa-solid fa-microphone"></i>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Dicas do WhatsApp -->
+            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-[11px] text-blue-800 space-y-1">
+              <div class="font-bold flex items-center gap-1">
+                <i class="fa-solid fa-lightbulb text-amber-500"></i> Dica de Entrega Meta
+              </div>
+              <p>Ao utilizar <strong>Media ID</strong> ou imagens hospedadas diretamente na Meta, a taxa de falha assíncrona cai a zero.</p>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- ABA 2: DISPARO EM MASSA -->
+    <!-- ABA 2: DISPARO EM MASSA & SANITIZADOR (ITEM 1, 4, 6) -->
     <div id="tab-batch" class="tab-pane hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
-          <i class="fa-solid fa-bullhorn text-emerald-600"></i> Disparo em Massa (Lote)
-        </h3>
-        <p class="text-xs text-slate-500 mb-6">
-          Envie para uma lista de contatos com espaçamento de tempo programado (evita gargalos de rate limit e bloqueios).
-        </p>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+        <div>
+          <h3 class="font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-bullhorn text-emerald-600"></i> Disparo em Massa com Higienização Brasileira
+          </h3>
+          <p class="text-xs text-slate-500 mt-1">
+            Importe listas manuais ou planilhas CSV com formatação automática de DDI 55, descarte de duplicados e checagem de DDDs.
+          </p>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Seletor de Modo de Entrada -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Coluna 1: Entrada de Contatos & Sanitização (7 colunas) -->
+          <div class="lg:col-span-7 space-y-4">
+            
+            <!-- Modo de Entrada -->
             <div class="flex gap-2 p-1 bg-slate-100 rounded-lg">
               <button type="button" id="btn-mode-manual" onclick="setBatchInputMode('manual')"
                 class="flex-1 py-1.5 text-xs font-semibold rounded-md bg-white shadow-sm text-slate-800 transition">
-                <i class="fa-solid fa-keyboard mr-1"></i> Digitar / Colar
+                <i class="fa-solid fa-keyboard mr-1"></i> Digitar / Colar Telefones
               </button>
               <button type="button" id="btn-mode-csv" onclick="setBatchInputMode('csv')"
                 class="flex-1 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-800 transition">
@@ -233,106 +510,139 @@
             </div>
 
             <!-- Entrada Manual -->
-            <div id="batch-input-manual">
-              <label class="block text-xs font-semibold text-slate-600 mb-1">
-                Lista de Telefones (Um por linha ou separados por vírgula)
+            <div id="batch-input-manual" class="space-y-2">
+              <label class="block text-xs font-semibold text-slate-600">
+                Lista de Telefones (um por linha ou separados por vírgula)
               </label>
-              <textarea id="batch-recipients" rows="6" placeholder="5511999998888&#10;5511988887777&#10;5521977776666"
+              <textarea id="batch-recipients" rows="6" placeholder="34991246376&#10;(11) 98888-7777&#10;5521977776666"
+                oninput="triggerBatchSanitize()"
                 class="w-full text-sm font-mono px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
-              <span class="text-[11px] text-slate-400">Total detectado: <strong id="batch-count">0</strong> contatos</span>
             </div>
 
-            <!-- Entrada por CSV -->
+            <!-- Entrada CSV -->
             <div id="batch-input-csv" class="hidden space-y-3">
               <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-5 text-center bg-slate-50 hover:bg-emerald-50/30 transition cursor-pointer"
                    onclick="document.getElementById('csv-file-input').click()">
                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-emerald-600 mb-2"></i>
                 <p class="text-xs font-bold text-slate-700">Clique para selecionar seu arquivo .csv</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Suporta separadores por vírgula (,) ou ponto e vírgula (;)</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Compatível com Excel, Google Sheets, vírgula (,) e ponto-e-vírgula (;)</p>
                 <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleCsvUpload(event)">
               </div>
 
-              <!-- Prévia do CSV -->
-              <div id="csv-preview-container" class="hidden bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+              <!-- Mapeamento de Colunas CSV -->
+              <div id="csv-preview-container" class="hidden bg-slate-50 p-3.5 rounded-lg border border-slate-200 space-y-3">
                 <div class="flex justify-between items-center text-xs">
                   <span class="font-bold text-slate-700"><i class="fa-solid fa-table mr-1 text-emerald-600"></i> <span id="csv-filename">arquivo.csv</span></span>
                   <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full" id="csv-row-count">0 linhas</span>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
                   <div>
-                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Coluna do Telefone:</label>
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Coluna Telefone:</label>
                     <select id="csv-col-phone" onchange="mapCsvColumns()" class="w-full text-xs p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500">
                     </select>
                   </div>
                   <div>
-                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Coluna Parâmetro {{1}} (Opcional):</label>
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Parâmetro {{1}} (Nome):</label>
                     <select id="csv-col-param1" onchange="mapCsvColumns()" class="w-full text-xs p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500">
                       <option value="">Nenhum (usar padrão)</option>
                     </select>
                   </div>
-                  <div class="col-span-2">
-                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Coluna Imagem de Cabeçalho / Link (Opcional):</label>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-1">Imagem / Link Header:</label>
                     <select id="csv-col-header-image" onchange="mapCsvColumns()" class="w-full text-xs p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500">
-                      <option value="">Nenhum (usar URL global abaixo)</option>
+                      <option value="">Nenhum (usar global)</option>
                     </select>
                   </div>
                 </div>
 
-                <div class="overflow-x-auto max-h-36 overflow-y-auto border border-slate-200 rounded">
-                  <table class="w-full text-[10px] text-left" id="csv-preview-table">
-                    <!-- Gerado dinamicamente -->
-                  </table>
+                <div class="overflow-x-auto max-h-32 overflow-y-auto border border-slate-200 rounded">
+                  <table class="w-full text-[10px] text-left" id="csv-preview-table"></table>
                 </div>
               </div>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Intervalo entre cada envio (segundos)</label>
-              <input type="number" id="batch-delay" value="2" min="1" max="60"
-                class="w-32 text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              <span class="text-[11px] text-slate-400 ml-2">Recomendado: 2 a 5 segundos por segurança.</span>
+            <!-- CARD RESUMO DO HIGIENIZADOR BRASILEIRO (ITEM 6) -->
+            <div id="sanitize-summary-card" class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+              <div class="flex justify-between items-center text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-wand-magic-sparkles text-emerald-600"></i> Higienizador de Telefones (BR)
+                </span>
+                <span class="text-[10px] font-normal text-slate-400">Verificação Automática</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-emerald-100/70 border border-emerald-300/60 rounded-lg p-2">
+                  <div class="text-base font-bold text-emerald-900" id="san-valid-count">0</div>
+                  <div class="text-[10px] text-emerald-700 font-semibold">Válidos (com 55)</div>
+                </div>
+                <div class="bg-amber-100/70 border border-amber-300/60 rounded-lg p-2">
+                  <div class="text-base font-bold text-amber-900" id="san-dup-count">0</div>
+                  <div class="text-[10px] text-amber-700 font-semibold">Duplicados Removidos</div>
+                </div>
+                <div class="bg-rose-100/70 border border-rose-300/60 rounded-lg p-2">
+                  <div class="text-base font-bold text-rose-900" id="san-invalid-count">0</div>
+                  <div class="text-[10px] text-rose-700 font-semibold">Inválidos / Descartados</div>
+                </div>
+              </div>
+              <!-- Lista de erros se houver inválidos -->
+              <div id="san-invalid-details" class="hidden text-[10px] text-rose-700 bg-rose-50 p-2 rounded border border-rose-200"></div>
             </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Intervalo de Segurança entre Envios (segundos)</label>
+              <div class="flex items-center gap-2">
+                <input type="number" id="batch-delay" value="2" min="1" max="60"
+                  class="w-24 text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <span class="text-[11px] text-slate-400">Recomendado: 2 a 5 segundos para respeitar os limites da Meta.</span>
+              </div>
+            </div>
+
           </div>
 
-          <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Configuração do Conteúdo</h4>
-            
+          <!-- Coluna 2: Configuração de Mensagem do Lote (5 colunas) -->
+          <div class="lg:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3.5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <i class="fa-solid fa-sliders text-emerald-600"></i> Configuração do Template
+            </h4>
+
             <div>
-              <div class="flex justify-between items-center mb-1">
-                <label class="block text-xs font-semibold text-slate-700">Template da Meta</label>
-                <button type="button" onclick="loadMetaTemplates()" class="text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1">
-                  <i class="fa-solid fa-arrows-rotate"></i> Atualizar Templates
-                </button>
-              </div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Template da Meta</label>
               <select id="batch-template-select" onchange="onTemplateSelected('batch')" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 <option value="">Carregando templates da Meta...</option>
               </select>
-              <input type="text" id="batch-template-name" value="20261023_wpp_20off_evo" class="hidden w-full text-sm mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Digite o nome do template...">
+              <input type="text" id="batch-template-name" value="20261023_wpp_20off_evo" class="hidden w-full text-sm mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg">
               <div id="batch-template-badge" class="mt-2 text-xs p-2.5 rounded-lg border hidden"></div>
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Idioma</label>
-              <select id="batch-template-lang" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <select id="batch-template-lang" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
                 <option value="pt_BR" selected>Português (Brasil) - pt_BR</option>
                 <option value="en_US">Inglês (EUA) - en_US</option>
                 <option value="es_ES">Espanhol - es_ES</option>
               </select>
             </div>
 
+            <!-- Upload Direto de Cabeçalho no Lote (Item 1) -->
             <div id="batch-header-image-container">
-              <label class="block text-xs font-semibold text-slate-600 mb-1">URL Imagem do Cabeçalho</label>
-              <input type="url" id="batch-header-image" placeholder="https://exemplo.com/banner-promocional.jpg"
-                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              <span id="batch-header-hint" class="text-[10px] text-slate-400">Usada se o template contiver header de imagem.</span>
+              <label class="block text-xs font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                <span>Imagem / Media ID Global</span>
+                <label for="batch-media-upload-input" class="text-[11px] text-emerald-600 hover:text-emerald-800 cursor-pointer font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Upload Direto
+                </label>
+              </label>
+              <input type="text" id="batch-header-image" placeholder="Media ID ou URL https://"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+              <input type="file" id="batch-media-upload-input" accept="image/png, image/jpeg" class="hidden" onchange="handleDirectMediaUpload(event, 'batch-header-image', 'batch-media-status')">
+              <div id="batch-media-status" class="hidden mt-1.5 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center justify-between"></div>
+              <span id="batch-header-hint" class="text-[10px] text-slate-400 block mt-0.5">Aplicada a todos os contatos que não tiverem imagem na planilha.</span>
             </div>
 
             <div id="batch-params-container">
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis (opcional)</label>
-              <input type="text" id="batch-template-params" placeholder="ex: Mensagem Geral, Promoção"
-                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              <span id="batch-params-hint" class="text-[10px] text-slate-400">Usado se o template possuir variáveis no corpo.</span>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros Padrão {{1}}, {{2}}... (opcional)</label>
+              <input type="text" id="batch-template-params" placeholder="ex: Cliente Especial"
+                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+              <span id="batch-params-hint" class="text-[10px] text-slate-400">Usado como fallback caso a linha do contato não tenha valor.</span>
             </div>
 
             <button onclick="startBatchSend()" id="btn-send-batch"
@@ -340,38 +650,56 @@
               <i class="fa-solid fa-play"></i> Iniciar Disparo em Massa
             </button>
           </div>
+
         </div>
 
-        <!-- Progresso do Envio em Massa -->
-        <div id="batch-progress-container" class="hidden mt-6 pt-6 border-t border-slate-200">
-          <div class="flex justify-between text-xs font-semibold mb-2">
-            <span>Progresso do Lote</span>
-            <span id="batch-progress-text">Processando...</span>
+        <!-- Progresso e Resultados do Disparo em Massa -->
+        <div id="batch-progress-container" class="hidden pt-6 border-t border-slate-200 space-y-3">
+          <div class="flex justify-between text-xs font-semibold">
+            <span class="flex items-center gap-1.5 text-slate-700">
+              <i class="fa-solid fa-spinner fa-spin text-emerald-600" id="batch-spinner"></i>
+              Progresso do Lote
+            </span>
+            <span id="batch-progress-text" class="text-slate-600">Processando...</span>
           </div>
-          <div class="w-full bg-slate-200 rounded-full h-3 mb-4 overflow-hidden">
+          
+          <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
             <div id="batch-progress-bar" class="bg-emerald-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
           </div>
 
-          <div id="batch-results-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+          <div class="flex justify-between items-center pt-2">
+            <h5 class="text-xs font-bold text-slate-700">Log de Envios do Lote:</h5>
+            <a href="/api/export-csv" download class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-md border border-slate-300 transition flex items-center gap-1">
+              <i class="fa-solid fa-file-csv"></i> Baixar Relatório em CSV
+            </a>
+          </div>
+
+          <div id="batch-results-list" class="space-y-1.5 max-h-64 overflow-y-auto"></div>
         </div>
+
       </div>
     </div>
 
-    <!-- ABA 3: HISTÓRICO & WEBHOOKS -->
+    <!-- ABA 3: HISTÓRICO PERSISTENTE & WEBHOOKS (ITEM 4, 5) -->
     <div id="tab-logs" class="tab-pane hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div>
             <h3 class="font-bold text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-satellite-dish text-emerald-600"></i> Eventos em Tempo Real & Webhook
+              <i class="fa-solid fa-satellite-dish text-emerald-600"></i> Histórico Persistente (SQLite) & Webhooks
             </h3>
             <p class="text-xs text-slate-500">
-              Acompanhe status de entrega (sent, delivered, read) e respostas enviadas pelos clientes.
+              Eventos gravados permanentemente no disco em <code>./data/whatsapp_sender.sqlite</code>.
             </p>
           </div>
-          <button onclick="loadLogs()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-arrows-rotate"></i> Atualizar Agora
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="loadLogs()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-arrows-rotate"></i> Atualizar Agora
+            </button>
+            <a href="/api/export-csv" download class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+              <i class="fa-solid fa-download"></i> Baixar Relatório CSV
+            </a>
+          </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -381,7 +709,7 @@
                 <th class="p-3">Horário</th>
                 <th class="p-3">Tipo de Evento</th>
                 <th class="p-3">Destinatário/Origem</th>
-                <th class="p-3">Detalhes / Resposta</th>
+                <th class="p-3">Detalhes / Retorno da Meta</th>
               </tr>
             </thead>
             <tbody id="logs-table-body" class="divide-y divide-slate-100">
@@ -396,16 +724,21 @@
 
   </main>
 
+  <!-- SCRIPTS CLIENT-SIDE -->
   <script>
-    // Inicialização e carregamento de configurações
+    let cachedTemplates = [];
+    let batchInputMode = 'manual';
+    let parsedCsvData = { headers: [], rows: [] };
+    let csvMappedContacts = [];
+    let sanitizedBatchContacts = [];
+
     document.addEventListener('DOMContentLoaded', () => {
       loadSavedCredentials();
       checkBackendConfig();
+      loadMetrics();
       loadLogs();
-      setInterval(loadLogs, 4000); // Polling a cada 4 segundos
-
-      // Listener para contagem de contatos no lote
-      document.getElementById('batch-recipients').addEventListener('input', updateBatchCount);
+      setInterval(loadMetrics, 6000);
+      setInterval(loadLogs, 6000);
     });
 
     function toggleCredentials() {
@@ -487,9 +820,301 @@
       };
     }
 
-    // Gerenciamento e Cache de Templates da Meta
-    let cachedTemplates = [];
+    // ----------------------------------------------------
+    // ITEM 3: DASHBOARD DE FUNIL DE ENTREGA EM TEMPO REAL
+    // ----------------------------------------------------
+    async function loadMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        const data = await res.json();
+        if (!data.success || !data.metrics) return;
 
+        const m = data.metrics;
+        document.getElementById('metric-total').innerText = m.total;
+        document.getElementById('metric-accepted').innerText = m.accepted;
+        document.getElementById('metric-delivered').innerText = m.delivered;
+        document.getElementById('metric-read').innerText = m.read;
+        document.getElementById('metric-failed').innerText = m.failed;
+
+        document.getElementById('metric-delivery-rate').innerText = `${m.deliveryRate}%`;
+        document.getElementById('metric-read-rate').innerText = `${m.readRate}%`;
+
+        document.getElementById('bar-delivery').style.width = `${Math.min(m.deliveryRate, 100)}%`;
+        document.getElementById('bar-delivery-text').innerText = `${m.deliveryRate}% (${m.delivered}/${m.accepted})`;
+
+        document.getElementById('bar-read').style.width = `${Math.min(m.readRate, 100)}%`;
+        document.getElementById('bar-read-text').innerText = `${m.readRate}% (${m.read}/${m.delivered})`;
+      } catch (err) {
+        console.warn('Erro ao carregar métricas:', err);
+      }
+    }
+
+    // ----------------------------------------------------
+    // ITEM 1: UPLOAD DIRETO DE MÍDIA PARA META (MEDIA API)
+    // ----------------------------------------------------
+    async function handleDirectMediaUpload(event, targetInputId, statusContainerId) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const statusBox = document.getElementById(statusContainerId);
+      statusBox.classList.remove('hidden');
+      statusBox.className = 'mt-1.5 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 flex items-center justify-between';
+      statusBox.innerHTML = `<span><i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Enviando <strong>${file.name}</strong> para a Meta...</span>`;
+
+      const { phoneNumberId, accessToken } = getCredentials();
+      if (!phoneNumberId || !accessToken) {
+        statusBox.className = 'mt-1.5 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-center justify-between';
+        statusBox.innerHTML = `<span><i class="fa-solid fa-circle-exclamation mr-1.5"></i> Informe o Phone Number ID e Access Token primeiro.</span>`;
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('phoneNumberId', phoneNumberId);
+      formData.append('accessToken', accessToken);
+
+      try {
+        const res = await fetch('/api/upload-media', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success && data.mediaId) {
+          document.getElementById(targetInputId).value = data.mediaId;
+          statusBox.className = 'mt-1.5 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center justify-between';
+          statusBox.innerHTML = `
+            <div class="flex items-center gap-1.5">
+              <i class="fa-solid fa-check-circle text-emerald-600"></i>
+              <span>Upload concluído! <strong>ID: ${data.mediaId}</strong> (${file.name})</span>
+            </div>
+            <span class="text-[10px] text-emerald-600 font-mono">Pronto para envio</span>
+          `;
+          updateWhatsAppPreview();
+        } else {
+          throw new Error(data.error || 'Erro no retorno da API');
+        }
+      } catch (err) {
+        statusBox.className = 'mt-1.5 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-center justify-between';
+        statusBox.innerHTML = `<span><i class="fa-solid fa-circle-exclamation mr-1.5"></i> Falha no upload: ${err.message}</span>`;
+      }
+    }
+
+    // ----------------------------------------------------
+    // ITEM 2: PREVIEW VISUAL DO WHATSAPP (MOCKUP INTERATIVO)
+    // ----------------------------------------------------
+    function updateWhatsAppPreview() {
+      const type = document.querySelector('input[name="single-type"]:checked')?.value || 'template';
+      const recipient = document.getElementById('single-recipient').value.trim();
+      const contactDisplay = document.getElementById('preview-contact-name');
+      const avatarLetter = document.getElementById('preview-avatar-letter');
+      
+      if (recipient) {
+        contactDisplay.querySelector('span').innerText = recipient;
+        avatarLetter.innerText = recipient.replace(/\D/g, '').slice(-2) || 'W';
+      } else {
+        contactDisplay.querySelector('span').innerText = 'EVO';
+        avatarLetter.innerText = 'E';
+      }
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      document.getElementById('preview-timestamp').innerText = timeStr;
+
+      const mediaContainer = document.getElementById('preview-media-container');
+      const mediaImg = document.getElementById('preview-media-img');
+      const mediaPlaceholder = document.getElementById('preview-media-placeholder');
+      const bodyTextEl = document.getElementById('preview-body-text');
+      const buttonsContainer = document.getElementById('preview-buttons-container');
+      buttonsContainer.innerHTML = '';
+
+      if (type === 'template') {
+        const currentTplName = document.getElementById('single-template-name').value.trim();
+        const tpl = cachedTemplates.find(t => t.name === currentTplName);
+        const headerImgVal = document.getElementById('single-template-header-image').value.trim();
+        const paramsVal = document.getElementById('single-template-params').value.split(',').map(s => s.trim()).filter(Boolean);
+
+        // Header Imagem
+        if (tpl && tpl.requiresImage) {
+          mediaContainer.classList.remove('hidden');
+          if (headerImgVal && headerImgVal.startsWith('http')) {
+            mediaImg.src = headerImgVal;
+            mediaImg.classList.remove('hidden');
+            mediaPlaceholder.classList.add('hidden');
+          } else if (headerImgVal) {
+            mediaImg.classList.add('hidden');
+            mediaPlaceholder.classList.remove('hidden');
+            mediaPlaceholder.innerHTML = `<i class="fa-solid fa-image text-2xl text-emerald-600 mb-1"></i><span>Media ID: <strong>${headerImgVal}</strong></span><span class="text-[9px] text-slate-400">(Aprovado no catálogo Meta)</span>`;
+          } else {
+            mediaImg.classList.add('hidden');
+            mediaPlaceholder.classList.remove('hidden');
+            mediaPlaceholder.innerHTML = `<i class="fa-solid fa-image text-2xl text-slate-400 mb-1"></i><span>[Insira ou faça upload da imagem]</span>`;
+          }
+        } else {
+          mediaContainer.classList.add('hidden');
+        }
+
+        // Corpo do Texto com Interpolação {{1}}, {{2}}...
+        let rawBody = (tpl && tpl.bodyText) ? tpl.bodyText : (tpl?.previewText || 'Olá! Obrigado por entrar em contato.');
+        paramsVal.forEach((param, idx) => {
+          const re = new RegExp(`\\{\\{${idx + 1}\\}\\}`, 'g');
+          rawBody = rawBody.replace(re, `*${param}*`);
+        });
+
+        // Formatação simples do WhatsApp (negrito *...*, itálico _..._)
+        let formatted = rawBody
+          .replace(/\*(.*?)\*/g, '<strong class="font-bold text-slate-900">$1</strong>')
+          .replace(/_(.*?)_/g, '<em class="italic">$1</em>');
+
+        bodyTextEl.innerHTML = formatted;
+
+        // Botões do Template
+        if (tpl && tpl.buttons && tpl.buttons.length > 0) {
+          buttonsContainer.classList.remove('hidden');
+          tpl.buttons.forEach(btn => {
+            const btnEl = document.createElement('div');
+            btnEl.className = 'w-full py-1.5 px-3 bg-white/80 hover:bg-white rounded border border-emerald-600/10 text-emerald-700 font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-xs cursor-pointer';
+            const icon = btn.type === 'PHONE_NUMBER' ? 'fa-phone' : (btn.type === 'URL' ? 'fa-arrow-up-right-from-square' : 'fa-reply');
+            btnEl.innerHTML = `<i class="fa-solid ${icon} text-[10px]"></i> <span>${btn.text}</span>`;
+            buttonsContainer.appendChild(btnEl);
+          });
+        } else {
+          buttonsContainer.classList.add('hidden');
+        }
+
+      } else if (type === 'image') {
+        const imgUrl = document.getElementById('single-image-url').value.trim();
+        const caption = document.getElementById('single-image-caption').value.trim();
+
+        mediaContainer.classList.remove('hidden');
+        if (imgUrl && imgUrl.startsWith('http')) {
+          mediaImg.src = imgUrl;
+          mediaImg.classList.remove('hidden');
+          mediaPlaceholder.classList.add('hidden');
+        } else {
+          mediaImg.classList.add('hidden');
+          mediaPlaceholder.classList.remove('hidden');
+          mediaPlaceholder.innerHTML = `<i class="fa-solid fa-image text-2xl text-slate-400 mb-1"></i><span>${imgUrl || '[URL ou Media ID]'}</span>`;
+        }
+
+        bodyTextEl.innerText = caption || 'Sem legenda.';
+        buttonsContainer.classList.add('hidden');
+
+      } else {
+        // Texto livre
+        mediaContainer.classList.add('hidden');
+        const txt = document.getElementById('single-text-message').value.trim();
+        bodyTextEl.innerText = txt || 'Digite o texto da mensagem no formulário...';
+        buttonsContainer.classList.add('hidden');
+      }
+    }
+
+    // ----------------------------------------------------
+    // ITEM 6: HIGIENIZADOR & VALIDADOR BRASILEIRO
+    // ----------------------------------------------------
+    function sanitizeBrPhoneClient(phoneStr) {
+      if (!phoneStr) return { valid: false, reason: 'Vazio' };
+      let cleaned = String(phoneStr).replace(/\D/g, '');
+      if (!cleaned) return { valid: false, reason: 'Sem dígitos' };
+
+      // Se usuário omitiu o 55 e colocou 10 ou 11 dígitos (DDD + número)
+      if (cleaned.length === 10 || cleaned.length === 11) {
+        cleaned = '55' + cleaned;
+      }
+
+      if (cleaned.length < 12 || cleaned.length > 13) {
+        return { valid: false, phone: cleaned, reason: 'Tamanho inválido (esperado 12 ou 13 dígitos)' };
+      }
+      if (!cleaned.startsWith('55')) {
+        return { valid: false, phone: cleaned, reason: 'DDI diferente de 55' };
+      }
+
+      const ddd = parseInt(cleaned.substring(2, 4), 10);
+      if (isNaN(ddd) || ddd < 11 || ddd > 99) {
+        return { valid: false, phone: cleaned, reason: `DDD ${ddd} inválido` };
+      }
+
+      return { valid: true, phone: cleaned, ddd: ddd };
+    }
+
+    function onSingleRecipientInput(val) {
+      const badge = document.getElementById('single-phone-badge');
+      const feedback = document.getElementById('single-phone-feedback');
+      const res = sanitizeBrPhoneClient(val);
+
+      if (!val.trim()) {
+        badge.className = 'absolute right-2.5 top-2.5 text-[11px] font-semibold text-slate-400';
+        badge.innerText = 'Aguardando número...';
+        feedback.innerText = 'Informe com DDD brasileiro (ex: 34 99124-6376). O DDI 55 será injetado automaticamente se omitido.';
+        updateWhatsAppPreview();
+        return;
+      }
+
+      if (res.valid) {
+        badge.className = 'absolute right-2.5 top-2.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded';
+        badge.innerHTML = `<i class="fa-solid fa-check mr-1"></i> Válido (DDD ${res.ddd})`;
+        feedback.innerHTML = `<span class="text-emerald-700 font-mono font-semibold">+${res.phone}</span> formato canônico pronto para disparo.`;
+      } else {
+        badge.className = 'absolute right-2.5 top-2.5 text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded';
+        badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Inválido`;
+        feedback.innerText = `Atenção: ${res.reason}`;
+      }
+      updateWhatsAppPreview();
+    }
+
+    let sanitizeTimeout = null;
+    function triggerBatchSanitize() {
+      clearTimeout(sanitizeTimeout);
+      sanitizeTimeout = setTimeout(executeBatchSanitize, 300);
+    }
+
+    async function executeBatchSanitize() {
+      let rawList = [];
+      if (batchInputMode === 'manual') {
+        const text = document.getElementById('batch-recipients').value;
+        rawList = text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+      } else {
+        rawList = csvMappedContacts;
+      }
+
+      if (rawList.length === 0) {
+        document.getElementById('san-valid-count').innerText = '0';
+        document.getElementById('san-dup-count').innerText = '0';
+        document.getElementById('san-invalid-count').innerText = '0';
+        document.getElementById('san-invalid-details').classList.add('hidden');
+        sanitizedBatchContacts = [];
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/sanitize-contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contacts: rawList })
+        });
+        const data = await res.json();
+
+        if (data.success && data.stats) {
+          const s = data.stats;
+          document.getElementById('san-valid-count').innerText = s.validCount;
+          document.getElementById('san-dup-count').innerText = s.duplicateCount;
+          document.getElementById('san-invalid-count').innerText = s.invalidCount;
+          sanitizedBatchContacts = data.valid;
+
+          const invalidBox = document.getElementById('san-invalid-details');
+          if (s.invalidCount > 0) {
+            invalidBox.classList.remove('hidden');
+            invalidBox.innerHTML = `<strong>Atenção:</strong> ${s.invalidCount} contato(s) descartado(s) por DDD ou formato inválido.`;
+          } else {
+            invalidBox.classList.add('hidden');
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao sanitizar lista:', err);
+      }
+    }
+
+    // Gerenciamento e Cache de Templates da Meta
     async function loadMetaTemplates() {
       try {
         const { accessToken } = getCredentials();
@@ -561,6 +1186,7 @@
         if (headerInput) headerInput.disabled = false;
         if (paramsContainer) paramsContainer.classList.remove('opacity-40', 'pointer-events-none');
         if (paramsInput) paramsInput.disabled = false;
+        updateWhatsAppPreview();
         return;
       }
 
@@ -575,7 +1201,7 @@
         badge.className = 'mt-2 text-xs p-2.5 rounded-lg border bg-blue-50 text-blue-800 border-blue-200 space-y-1';
         badge.innerHTML = `
           <div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-image text-blue-600"></i> Template COM IMAGEM DE CABEÇALHO</div>
-          <div class="text-[11px] text-blue-700">Preenchido com o <strong>Media ID oficial aprovado</strong> na Meta (ou informe uma URL .jpg/.png direta).</div>
+          <div class="text-[11px] text-blue-700">Preenchido com o <strong>Media ID oficial aprovado</strong> na Meta (ou faça upload direto ao lado).</div>
         `;
         if (headerContainer) headerContainer.classList.remove('opacity-40', 'pointer-events-none');
         if (headerInput) {
@@ -609,13 +1235,6 @@
           paramsInput.value = '';
           paramsInput.placeholder = 'Desabilitado (template não possui variáveis {{1}})';
         }
-        if (prefix === 'batch') {
-          const colParam1 = document.getElementById('csv-col-param1');
-          if (colParam1) colParam1.value = '';
-          if (typeof mapCsvColumns === 'function' && parsedCsvData && parsedCsvData.rows && parsedCsvData.rows.length > 0) {
-            mapCsvColumns();
-          }
-        }
       } else {
         if (paramsContainer) paramsContainer.classList.remove('opacity-40', 'pointer-events-none');
         if (paramsInput) {
@@ -623,19 +1242,26 @@
           paramsInput.placeholder = `Informe ${tpl.variableCount} variável(is) separadas por vírgula`;
         }
       }
+
+      if (prefix === 'single') {
+        updateWhatsAppPreview();
+      }
     }
 
     // 1. Disparo Único
     async function sendSingleMessage() {
       const btn = document.getElementById('btn-send-single');
-      const recipient = document.getElementById('single-recipient').value.trim();
-      const type = document.querySelector('input[name="single-type"]:checked').value;
-      const { phoneNumberId, accessToken } = getCredentials();
+      const rawRecipient = document.getElementById('single-recipient').value.trim();
+      const sanitized = sanitizeBrPhoneClient(rawRecipient);
 
-      if (!recipient) {
-        alert('Por favor, informe o telefone do destinatário.');
+      if (!sanitized.valid) {
+        alert(`Telefone inválido: ${sanitized.reason}. Verifique o número digitado.`);
         return;
       }
+
+      const recipient = sanitized.phone;
+      const type = document.querySelector('input[name="single-type"]:checked').value;
+      const { phoneNumberId, accessToken } = getCredentials();
 
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
@@ -684,15 +1310,12 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar Mensagem Agora`;
+        loadMetrics();
         loadLogs();
       }
     }
 
-    // 2. Disparo em Massa & Suporte a CSV
-    let batchInputMode = 'manual'; // 'manual' ou 'csv'
-    let parsedCsvData = { headers: [], rows: [] };
-    let csvMappedContacts = [];
-
+    // 2. Disparo em Massa
     function setBatchInputMode(mode) {
       batchInputMode = mode;
       const isManual = mode === 'manual';
@@ -709,13 +1332,7 @@
         btnCsv.className = 'flex-1 py-1.5 text-xs font-semibold rounded-md bg-white shadow-sm text-slate-800 transition';
         btnManual.className = 'flex-1 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-800 transition';
       }
-    }
-
-    function updateBatchCount() {
-      const raw = document.getElementById('batch-recipients').value;
-      const list = raw.split(/[\n,]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length >= 10);
-      const unique = [...new Set(list)];
-      document.getElementById('batch-count').innerText = unique.length;
+      triggerBatchSanitize();
     }
 
     function handleCsvUpload(event) {
@@ -737,24 +1354,19 @@
         document.getElementById('csv-preview-container').classList.remove('hidden');
         document.getElementById('csv-row-count').innerText = `${parsedCsvData.rows.length} contatos encontrados`;
 
-        // Preencher selects de colunas
         const colPhoneSelect = document.getElementById('csv-col-phone');
         const colParam1Select = document.getElementById('csv-col-param1');
         const colHeaderImgSelect = document.getElementById('csv-col-header-image');
 
         colPhoneSelect.innerHTML = '';
         colParam1Select.innerHTML = '<option value="">Nenhum (usar padrão)</option>';
-        colHeaderImgSelect.innerHTML = '<option value="">Nenhum (usar URL global abaixo)</option>';
+        colHeaderImgSelect.innerHTML = '<option value="">Nenhum (usar global)</option>';
 
         parsedCsvData.headers.forEach((h, idx) => {
-          const opt1 = new Option(h, idx);
-          const opt2 = new Option(h, idx);
-          const opt3 = new Option(h, idx);
-          colPhoneSelect.add(opt1);
-          colParam1Select.add(opt2);
-          colHeaderImgSelect.add(opt3);
+          colPhoneSelect.add(new Option(h, idx));
+          colParam1Select.add(new Option(h, idx));
+          colHeaderImgSelect.add(new Option(h, idx));
 
-          // Tentar detectar automaticamente a coluna do telefone, nome e imagem
           const lowerH = h.toLowerCase();
           if (lowerH.includes('tel') || lowerH.includes('phone') || lowerH.includes('cel') || lowerH.includes('numero') || lowerH.includes('whatsapp')) {
             colPhoneSelect.value = idx;
@@ -762,7 +1374,7 @@
           if (lowerH.includes('nome') || lowerH.includes('name') || lowerH.includes('cliente')) {
             colParam1Select.value = idx;
           }
-          if (lowerH.includes('img') || lowerH.includes('imagem') || lowerH.includes('image') || lowerH.includes('foto') || lowerH.includes('banner') || lowerH.includes('url')) {
+          if (lowerH.includes('img') || lowerH.includes('imagem') || lowerH.includes('image') || lowerH.includes('banner')) {
             colHeaderImgSelect.value = idx;
           }
         });
@@ -774,10 +1386,8 @@
     }
 
     function parseCsvText(text) {
-      // Identificar separador (vírgula ou ponto-e-vírgula)
       const firstLine = text.split('\n')[0] || '';
       const separator = firstLine.includes(';') ? ';' : ',';
-
       const lines = text.split(/\r\n|\n/).filter(line => line.trim().length > 0);
       if (lines.length === 0) return { headers: [], rows: [] };
 
@@ -790,18 +1400,13 @@
           rows.push(cols);
         }
       }
-
       return { headers, rows };
     }
 
     function mapCsvColumns() {
       const phoneIdx = parseInt(document.getElementById('csv-col-phone').value, 10);
-      const param1Idx = document.getElementById('csv-col-param1').value !== '' 
-        ? parseInt(document.getElementById('csv-col-param1').value, 10) 
-        : null;
-      const headerImgIdx = document.getElementById('csv-col-header-image').value !== ''
-        ? parseInt(document.getElementById('csv-col-header-image').value, 10)
-        : null;
+      const param1Idx = document.getElementById('csv-col-param1').value !== '' ? parseInt(document.getElementById('csv-col-param1').value, 10) : null;
+      const headerImgIdx = document.getElementById('csv-col-header-image').value !== '' ? parseInt(document.getElementById('csv-col-header-image').value, 10) : null;
 
       csvMappedContacts = [];
       const previewRows = parsedCsvData.rows.slice(0, 5);
@@ -825,46 +1430,26 @@
         </tbody>
       `;
 
-      // Validar permissões do template selecionado
-      const currentTplName = document.getElementById('batch-template-name').value.trim();
-      const currentTpl = cachedTemplates.find(t => t.name === currentTplName);
-      const allowParams = !currentTpl || currentTpl.variableCount > 0;
-      const allowHeaderImg = !currentTpl || currentTpl.requiresImage;
-
       parsedCsvData.rows.forEach(row => {
-        const cleanPhone = (row[phoneIdx] || '').replace(/\D/g, '');
-        if (cleanPhone.length >= 10) {
-          const params = [];
-          if (allowParams && param1Idx !== null && row[param1Idx]) {
-            params.push(String(row[param1Idx]).trim());
-          }
+        const rawPhone = (row[phoneIdx] || '').trim();
+        if (rawPhone) {
           const item = {
-            phone: cleanPhone,
-            params: params
+            phone: rawPhone,
+            params: (param1Idx !== null && row[param1Idx]) ? [String(row[param1Idx]).trim()] : []
           };
-          if (allowHeaderImg && headerImgIdx !== null && row[headerImgIdx]) {
+          if (headerImgIdx !== null && row[headerImgIdx]) {
             item.headerImageUrl = row[headerImgIdx].trim();
           }
           csvMappedContacts.push(item);
         }
       });
+
+      triggerBatchSanitize();
     }
 
     async function startBatchSend() {
-      let recipientsList = [];
-
-      if (batchInputMode === 'manual') {
-        const raw = document.getElementById('batch-recipients').value;
-        const numbers = raw.split(/[\n,]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length >= 10);
-        recipientsList = [...new Set(numbers)];
-      } else {
-        recipientsList = csvMappedContacts;
-      }
-
-      if (recipientsList.length === 0) {
-        alert(batchInputMode === 'manual' 
-          ? 'Informe pelo menos um número de telefone válido.' 
-          : 'Nenhum contato válido encontrado no arquivo CSV.');
+      if (sanitizedBatchContacts.length === 0) {
+        alert('Nenhum contato válido encontrado para disparo após a higienização.');
         return;
       }
 
@@ -880,7 +1465,7 @@
 
       progressContainer.classList.remove('hidden');
       progressBar.style.width = '20%';
-      progressText.innerText = `Enviando para ${recipientsList.length} contatos...`;
+      progressText.innerText = `Enviando para ${sanitizedBatchContacts.length} contatos válidos...`;
       resultsList.innerHTML = '';
 
       const currentTplName = document.getElementById('batch-template-name').value.trim();
@@ -891,7 +1476,7 @@
       const payload = {
         phoneNumberId,
         accessToken,
-        recipients: recipientsList,
+        recipients: sanitizedBatchContacts,
         delaySeconds: parseFloat(document.getElementById('batch-delay').value) || 2,
         type: 'template',
         templateName: currentTplName,
@@ -914,7 +1499,7 @@
         const data = await res.json();
         progressBar.style.width = '100%';
         if (data.success) {
-          progressText.innerText = `Concluído: ${data.successful} sucessos, ${data.failed} falhas.`;
+          progressText.innerText = `Lote finalizado: ${data.successful} sucessos, ${data.failed} falhas.`;
           
           data.details.forEach(item => {
             const row = document.createElement('div');
@@ -934,6 +1519,7 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-play"></i> Iniciar Disparo em Massa`;
+        loadMetrics();
         loadLogs();
       }
     }

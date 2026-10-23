@@ -2,18 +2,46 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const multer = require('multer');
+const db = require('./db');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 16 * 1024 * 1024 } // 16MB max
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Histórico de disparos e webhooks em memória (ideal para testes)
+// Histórico de disparos inicializado do banco de dados SQLite
 const logs = [];
+
+// Carrega últimos disparos do SQLite na inicialização
+try {
+  const initialLogs = db.getRecentDispatches(50);
+  initialLogs.forEach(d => {
+    logs.push({
+      id: d.id,
+      timestamp: new Date(d.created_at).toLocaleTimeString('pt-BR'),
+      type: d.type === 'batch' ? 'send_batch' : 'send_single',
+      details: {
+        recipient: d.recipient,
+        template: d.template,
+        status: d.status,
+        wamid: d.wamid,
+        error: d.error
+      }
+    });
+  });
+} catch (e) {
+  console.warn('Erro ao carregar histórico inicial do SQLite:', e.message);
+}
 
 function addLog(type, details) {
   const logEntry = {
@@ -51,9 +79,29 @@ async function sendToMetaWhatsApp({ phoneNumberId, accessToken, payload }) {
   return data;
 }
 
-// Utilitário de formatação de número (remove caracteres não numéricos)
+// Utilitário inteligente de formatação de número de telefone (Item 6)
 function cleanPhoneNumber(phone) {
-  return phone.replace(/\D/g, '');
+  let cleaned = String(phone || '').replace(/\D/g, '');
+  // Adiciona DDI 55 se o número tiver 10 ou 11 dígitos (DDD + número)
+  if ((cleaned.length === 10 || cleaned.length === 11) && !cleaned.startsWith('55')) {
+    cleaned = '55' + cleaned;
+  }
+  return cleaned;
+}
+
+function validateBrazilianPhone(phone) {
+  const cleaned = cleanPhoneNumber(phone);
+  if (!cleaned || cleaned.length < 12 || cleaned.length > 13) {
+    return { valid: false, phone: cleaned, reason: 'Comprimento inválido (esperado 12 ou 13 dígitos com DDI 55)' };
+  }
+  if (!cleaned.startsWith('55')) {
+    return { valid: false, phone: cleaned, reason: 'DDI inválido (esperado 55 para Brasil)' };
+  }
+  const ddd = parseInt(cleaned.substring(2, 4), 10);
+  if (isNaN(ddd) || ddd < 11 || ddd > 99) {
+    return { valid: false, phone: cleaned, reason: `DDD ${ddd} inválido` };
+  }
+  return { valid: true, phone: cleaned };
 }
 
 // 1. Rota de Configuração / Status
@@ -121,6 +169,8 @@ app.get('/api/templates', async (req, res) => {
         defaultMediaId,
         variableCount,
         hasButtons: !!buttonComponent,
+        buttons: buttonComponent?.buttons || [],
+        bodyText: bodyText,
         previewText: bodyText.substring(0, 100)
       };
     });
@@ -131,6 +181,153 @@ app.get('/api/templates', async (req, res) => {
   }
 });
 
+
+// 1.2 Rota de Upload Direto de Mídia na Meta (Item 1)
+app.post('/api/upload-media', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'Nenhum arquivo enviado.' });
+    }
+
+    const phoneNumberId = req.body.phoneNumberId || process.env.META_PHONE_NUMBER_ID;
+    const accessToken = req.body.accessToken || process.env.META_ACCESS_TOKEN;
+
+    if (!phoneNumberId || !accessToken) {
+      return res.status(400).json({ success: false, error: 'Credenciais da Meta (Phone Number ID ou Access Token) não configuradas.' });
+    }
+
+    const formData = new FormData();
+    const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
+    formData.append('file', blob, req.file.originalname);
+    formData.append('type', req.file.mimetype);
+    formData.append('messaging_product', 'whatsapp');
+
+    const metaRes = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: formData
+    });
+
+    const data = await metaRes.json();
+    if (!metaRes.ok) {
+      throw new Error(data.error?.message || 'Falha no upload para a API da Meta');
+    }
+
+    const savedMedia = db.saveMedia({
+      mediaId: data.id,
+      filename: req.file.originalname,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size
+    });
+
+    res.json({
+      success: true,
+      mediaId: data.id,
+      filename: req.file.originalname,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 1.3 Rota para Listar Mídias do Cofre
+app.get('/api/media', (req, res) => {
+  try {
+    const list = db.getMediaList();
+    res.json({ success: true, media: list });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 1.4 Rota de Métricas e Funil em Tempo Real (Item 3)
+app.get('/api/metrics', (req, res) => {
+  try {
+    const metrics = db.getMetrics();
+    res.json({ success: true, metrics });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 1.5 Rota de Exportação do Relatório CSV (Item 4)
+app.get('/api/export-csv', (req, res) => {
+  try {
+    const dispatches = db.getRecentDispatches(2000);
+    let csv = '\uFEFFID,Tipo,Telefone,Template,Status,WAMID,Erro,Data/Hora\n';
+    dispatches.forEach(d => {
+      const line = [
+        `"${d.id || ''}"`,
+        `"${d.type || ''}"`,
+        `"${d.recipient || ''}"`,
+        `"${d.template || ''}"`,
+        `"${d.status || ''}"`,
+        `"${d.wamid || ''}"`,
+        `"${(d.error || '').replace(/"/g, '""')}"`,
+        `"${d.created_at || ''}"`
+      ].join(',');
+      csv += line + '\n';
+    });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=relatorio_disparos_${Date.now()}.csv`);
+    res.send(csv);
+  } catch (err) {
+    res.status(500).send('Erro ao exportar CSV: ' + err.message);
+  }
+});
+
+// 1.6 Rota de Higienização e Validação de Contatos (Item 6)
+app.post('/api/sanitize-contacts', (req, res) => {
+  try {
+    const { contacts = [] } = req.body;
+    const valid = [];
+    const duplicates = [];
+    const invalid = [];
+    const seen = new Set();
+
+    contacts.forEach((item, index) => {
+      const rawPhone = typeof item === 'string' ? item : item.phone;
+      const validation = validateBrazilianPhone(rawPhone);
+
+      if (!validation.valid) {
+        invalid.push({ index: index + 1, raw: rawPhone, reason: validation.reason });
+        return;
+      }
+
+      const cleanPhone = validation.phone;
+      if (seen.has(cleanPhone)) {
+        duplicates.push({ index: index + 1, phone: cleanPhone });
+        return;
+      }
+
+      seen.add(cleanPhone);
+      valid.push({
+        ...(typeof item === 'object' ? item : {}),
+        phone: cleanPhone
+      });
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        total: contacts.length,
+        validCount: valid.length,
+        duplicateCount: duplicates.length,
+        invalidCount: invalid.length
+      },
+      valid,
+      duplicates,
+      invalid
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // 2. Disparo Individual (Transacional)
 app.post('/api/send-single', async (req, res) => {
@@ -226,7 +423,19 @@ app.post('/api/send-single', async (req, res) => {
     }
 
     const metaResponse = await sendToMetaWhatsApp({ phoneNumberId, accessToken, payload });
+    const wamid = metaResponse.messages?.[0]?.id || null;
     
+    // Grava no SQLite e na memória
+    db.saveDispatch({
+      id: Date.now() + Math.random().toString(36).substr(2, 5),
+      type: 'single',
+      recipient: cleanPhone,
+      template: templateName || null,
+      status: 'accepted',
+      wamid,
+      payload
+    });
+
     addLog('send_single', {
       recipient: cleanPhone,
       type,
@@ -236,6 +445,16 @@ app.post('/api/send-single', async (req, res) => {
 
     res.json({ success: true, metaResponse });
   } catch (error) {
+    db.saveDispatch({
+      id: Date.now() + Math.random().toString(36).substr(2, 5),
+      type: 'single',
+      recipient: req.body?.recipient || 'desconhecido',
+      template: req.body?.templateName || null,
+      status: 'failed',
+      error: error.message,
+      payload: req.body
+    });
+
     addLog('error', {
       action: 'send-single',
       recipient: req.body?.recipient,
@@ -364,9 +583,31 @@ app.post('/api/send-batch', async (req, res) => {
 
       try {
         const metaResponse = await sendToMetaWhatsApp({ phoneNumberId, accessToken, payload });
+        const wamid = metaResponse.messages?.[0]?.id || null;
+
+        db.saveDispatch({
+          id: Date.now() + Math.random().toString(36).substr(2, 5),
+          type: 'batch',
+          recipient: contact.phone,
+          template: templateName || null,
+          status: 'accepted',
+          wamid,
+          payload
+        });
+
         results.push({ phone: contact.phone, status: 'success', metaResponse });
         addLog('send_batch', { phone: contact.phone, status: 'success', metaResponse });
       } catch (err) {
+        db.saveDispatch({
+          id: Date.now() + Math.random().toString(36).substr(2, 5),
+          type: 'batch',
+          recipient: contact.phone,
+          template: templateName || null,
+          status: 'failed',
+          error: err.message,
+          payload
+        });
+
         results.push({ phone: contact.phone, status: 'failed', error: err.message });
         addLog('send_batch', { phone: contact.phone, status: 'failed', error: err.message });
       }
@@ -415,6 +656,17 @@ app.post('/webhook', (req, res) => {
         // Status de entrega (sent, delivered, read, failed)
         if (value && value.statuses) {
           value.statuses.forEach(status => {
+            const errDetails = status.errors ? JSON.stringify(status.errors) : null;
+            db.saveWebhookEvent({
+              id: 'wh_' + Date.now() + Math.random().toString(36).substr(2, 4),
+              event_type: 'status',
+              recipient_id: status.recipient_id,
+              wamid: status.id,
+              status: status.status,
+              errors: errDetails,
+              raw_payload: status
+            });
+
             addLog('webhook_status', {
               recipient_id: status.recipient_id,
               status: status.status,
