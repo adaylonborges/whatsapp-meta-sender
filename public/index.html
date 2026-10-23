@@ -39,6 +39,19 @@
       border-bottom-right-radius: 12px;
       margin: 0 auto;
     }
+    .whatsapp-chat-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .whatsapp-chat-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .whatsapp-chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    .whatsapp-chat-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.35);
+    }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 antialiased font-sans">
@@ -380,12 +393,12 @@
             </div>
 
             <!-- Moldura do Celular -->
-            <div class="rounded-[2rem] border-4 border-slate-800 bg-slate-800 p-2 shadow-xl max-w-[340px] mx-auto">
+            <div class="rounded-[2rem] border-4 border-slate-800 bg-slate-800 p-2 shadow-xl max-w-[360px] mx-auto">
               <!-- Notch -->
               <div class="phone-notch mb-1"></div>
 
               <!-- Tela do Celular -->
-              <div class="rounded-[1.4rem] overflow-hidden flex flex-col h-[480px] whatsapp-bg border border-slate-300/40">
+              <div class="rounded-[1.4rem] overflow-hidden flex flex-col h-[540px] whatsapp-bg border border-slate-300/40">
                 
                 <!-- Barra de Status / Topbar do WhatsApp -->
                 <div class="whatsapp-header text-white px-3 py-2 flex items-center justify-between text-xs shadow-sm z-10">
@@ -410,7 +423,8 @@
                 </div>
 
                 <!-- Área da Conversa -->
-                <div class="flex-1 p-3 overflow-y-auto space-y-2 flex flex-col justify-end">
+                <div id="preview-chat-scroll" class="flex-1 p-3 overflow-y-auto space-y-2 flex flex-col whatsapp-chat-scroll">
+                  <div class="flex-1 min-h-[4px]"></div>
                   
                   <!-- Tag de Criptografia do WhatsApp -->
                   <div class="text-center my-1">
@@ -420,19 +434,19 @@
                   </div>
 
                   <!-- Balão de Mensagem do WhatsApp -->
-                  <div class="whatsapp-bubble p-2 max-w-[92%] ml-auto text-xs text-slate-800 relative space-y-1.5">
+                  <div class="whatsapp-bubble p-2.5 max-w-[94%] ml-auto text-xs text-slate-800 relative space-y-2">
                     
                     <!-- Imagem do Cabeçalho no Mockup -->
-                    <div id="preview-media-container" class="rounded-lg overflow-hidden border border-emerald-800/10 bg-slate-200 max-h-40 hidden flex items-center justify-center">
-                      <img id="preview-media-img" src="" alt="Imagem do Header" class="w-full h-auto object-cover max-h-40 hidden">
-                      <div id="preview-media-placeholder" class="p-4 text-center text-slate-500 text-[11px] flex flex-col items-center gap-1">
+                    <div id="preview-media-container" class="rounded-lg overflow-hidden border border-emerald-800/10 bg-slate-200 max-h-48 hidden flex items-center justify-center">
+                      <img id="preview-media-img" src="" alt="Imagem do Header" class="w-full h-auto object-cover max-h-48 hidden">
+                      <div id="preview-media-placeholder" class="p-3 text-center text-slate-500 text-[11px] flex flex-col items-center gap-1">
                         <i class="fa-solid fa-image text-2xl text-slate-400"></i>
                         <span>[Imagem de Cabeçalho da Meta]</span>
                       </div>
                     </div>
 
                     <!-- Texto do Corpo -->
-                    <div id="preview-body-text" class="whitespace-pre-line text-[11.5px] leading-relaxed text-slate-800">
+                    <div id="preview-body-text" class="whitespace-pre-wrap break-words text-[11.5px] leading-relaxed text-slate-800">
                       Carregando texto do template...
                     </div>
 
@@ -726,7 +740,59 @@
 
   <!-- SCRIPTS CLIENT-SIDE -->
   <script>
-    let cachedTemplates = [];
+    const defaultKnownTemplates = [
+      {
+        name: '20261023_wpp_20off_evo',
+        status: 'APPROVED',
+        language: 'pt_BR',
+        category: 'MARKETING',
+        requiresImage: false,
+        variableCount: 0,
+        hasButtons: true,
+        buttons: [{ type: 'URL', text: 'Eu quero!', url: 'https://spoint.onelink.me/M2OO/5yo0ta1g' }],
+        bodyText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!\n\n🪙 Separamos essa oportunidade para você voltar: no app 📱 *tem um cupom exclusivo de 20% OFF* em uma seleção de alta performance (tem *Superblast 3, Adizero Evo SL, Nike Vomero 18* e mais na lista)! 🪙\n\nAcesse e escolha como aproveitar os seus pontos no app:\n👟 Libere o cupom de 20% OFF na seleção de elite\n💵 Transforme os pontos que você já tem em saldo para abater no valor da sua compra\n📱 Acesse essa e outras ofertas super exclusivas",
+        previewText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!"
+      },
+      {
+        name: '20261023_wpp_20off_evo_img_pt',
+        status: 'APPROVED',
+        language: 'pt_BR',
+        category: 'MARKETING',
+        requiresImage: true,
+        defaultMediaId: '1321074129207865',
+        variableCount: 0,
+        hasButtons: true,
+        buttons: [{ type: 'URL', text: 'Bora pro app!', url: 'https://spoint.onelink.me/M2OO/5yo0ta1g' }],
+        bodyText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!\n\n🪙 Separamos essa oportunidade para você voltar: no app 📱 *tem um cupom exclusivo de 20% OFF* em uma seleção de alta performance (tem *Superblast 3, Adizero Evo SL, Nike Vomero 18* e mais na lista)! 🪙\n\nAcesse e escolha como aproveitar os seus pontos no app:\n👟 Libere o cupom de 20% OFF na seleção de elite\n💵 Transforme os pontos que você já tem em saldo para abater no valor da sua compra\n📱 Acesse essa e outras ofertas super exclusivas",
+        previewText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!"
+      },
+      {
+        name: '20261023_wpp_20off_ofertas',
+        status: 'APPROVED',
+        language: 'pt_BR',
+        category: 'MARKETING',
+        requiresImage: false,
+        variableCount: 0,
+        hasButtons: true,
+        buttons: [{ type: 'URL', text: 'Bora pro app!', url: 'https://spoint.onelink.me/M2OO/5yo0ta1g' }],
+        bodyText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!\n\n🪙 Separamos essa oportunidade para você voltar: no app 📱 *tem um cupom exclusivo de 20% OFF* em uma seleção de alta performance (tem *Superblast 3, Adizero Evo SL, Nike Vomero 18* e mais na lista)! 🪙\n\nAcesse e escolha como aproveitar os seus pontos no app:\n👟 Libere o cupom de 20% OFF na seleção de elite\n💵 Transforme os pontos que você já tem em saldo para abater no valor da sua compra\n📱 Acesse essa e outras ofertas super exclusivas",
+        previewText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!"
+      },
+      {
+        name: '20261023_wpp_20off_vomero_img',
+        status: 'APPROVED',
+        language: 'pt_BR',
+        category: 'MARKETING',
+        requiresImage: true,
+        defaultMediaId: '1321074129207865',
+        variableCount: 0,
+        hasButtons: true,
+        buttons: [{ type: 'URL', text: 'Eu quero!', url: 'https://spoint.onelink.me/M2OO/5yo0ta1g' }],
+        bodyText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!\n\n🪙 Separamos essa oportunidade para você voltar: no app 📱 *tem um cupom exclusivo de 20% OFF* em uma seleção de alta performance (tem *Superblast 3, Adizero Evo SL, Nike Vomero 18* e mais na lista)! 🪙\n\nAcesse e escolha como aproveitar os seus pontos no app:\n👟 Libere o cupom de 20% OFF na seleção de elite\n💵 Transforme os pontos que você já tem em saldo para abater no valor da sua compra\n📱 Acesse essa e outras ofertas super exclusivas",
+        previewText: "Olá! 💛\n\nSabia que a *sua última compra na Centauro gerou pontos no Spoint?* Eles estão disponíveis e prontos para você usar!"
+      }
+    ];
+    let cachedTemplates = [...defaultKnownTemplates];
     let batchInputMode = 'manual';
     let parsedCsvData = { headers: [], rows: [] };
     let csvMappedContacts = [];
@@ -734,6 +800,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       loadSavedCredentials();
+      populateTemplateSelects();
+      updateWhatsAppPreview();
       checkBackendConfig();
       loadMetrics();
       loadLogs();
@@ -962,9 +1030,14 @@
         });
 
         // Formatação simples do WhatsApp (negrito *...*, itálico _..._)
-        let formatted = rawBody
+        let safeText = rawBody
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+        let formatted = safeText
           .replace(/\*(.*?)\*/g, '<strong class="font-bold text-slate-900">$1</strong>')
-          .replace(/_(.*?)_/g, '<em class="italic">$1</em>');
+          .replace(/_(.*?)_/g, '<em class="italic text-slate-700">$1</em>');
 
         bodyTextEl.innerHTML = formatted;
 
@@ -1006,6 +1079,14 @@
         const txt = document.getElementById('single-text-message').value.trim();
         bodyTextEl.innerText = txt || 'Digite o texto da mensagem no formulário...';
         buttonsContainer.classList.add('hidden');
+      }
+
+      // Garante que o scroll inicia pelo topo da mensagem para que o cabeçalho e primeiro parágrafo fiquem visíveis
+      const chatContainer = document.getElementById('preview-chat-scroll');
+      if (chatContainer) {
+        setTimeout(() => {
+          chatContainer.scrollTop = 0;
+        }, 30);
       }
     }
 

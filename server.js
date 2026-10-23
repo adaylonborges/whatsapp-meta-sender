@@ -171,7 +171,7 @@ app.get('/api/templates', async (req, res) => {
         hasButtons: !!buttonComponent,
         buttons: buttonComponent?.buttons || [],
         bodyText: bodyText,
-        previewText: bodyText.substring(0, 100)
+        previewText: bodyText
       };
     });
 
