@@ -122,13 +122,21 @@
 
             <!-- Campos do Template -->
             <div id="single-template-fields" class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Template na Meta</label>
-                  <input type="text" id="single-template-name" value="teste" placeholder="ex: teste"
-                    class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                  <span class="text-[10px] text-slate-400">Informe o nome do template aprovado no WhatsApp Manager.</span>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="block text-xs font-semibold text-slate-700">Template da Meta</label>
+                  <button type="button" onclick="loadMetaTemplates()" class="text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-arrows-rotate"></i> Atualizar Templates
+                  </button>
                 </div>
+                <select id="single-template-select" onchange="onTemplateSelected('single')" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <option value="">Carregando templates da Meta...</option>
+                </select>
+                <input type="text" id="single-template-name" value="20261023_wpp_20off_evo" class="hidden w-full text-sm mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Digite o nome do template...">
+                <div id="single-template-badge" class="mt-2 text-xs p-2.5 rounded-lg border hidden"></div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold text-slate-600 mb-1">Idioma</label>
                   <select id="single-template-lang" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -137,19 +145,19 @@
                     <option value="es_ES">Espanhol - es_ES</option>
                   </select>
                 </div>
+                <div id="single-header-image-container">
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">URL Imagem do Cabeçalho</label>
+                  <input type="url" id="single-template-header-image" placeholder="https://exemplo.com/banner.jpg"
+                    class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <span id="single-header-hint" class="text-[10px] text-slate-400">Obrigatório para templates com imagem.</span>
+                </div>
               </div>
 
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">URL da Imagem de Cabeçalho (Opcional - caso o template tenha Header de Mídia)</label>
-                <input type="url" id="single-template-header-image" placeholder="https://exemplo.com/banner.jpg"
-                  class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <span class="text-[10px] text-slate-400">URL pública da imagem (jpg, png) para templates com cabeçalho de mídia.</span>
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis {{1}}, {{2}}... (opcional, separados por vírgula)</label>
+              <div id="single-params-container">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis {{1}}, {{2}}... (opcional)</label>
                 <input type="text" id="single-template-params" placeholder="ex: João, 123456"
                   class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <span id="single-params-hint" class="text-[10px] text-slate-400">Separe por vírgula se houver variáveis no corpo.</span>
               </div>
             </div>
 
@@ -291,9 +299,17 @@
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Configuração do Conteúdo</h4>
             
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Template na Meta</label>
-              <input type="text" id="batch-template-name" value="teste"
-                class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-xs font-semibold text-slate-700">Template da Meta</label>
+                <button type="button" onclick="loadMetaTemplates()" class="text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-arrows-rotate"></i> Atualizar Templates
+                </button>
+              </div>
+              <select id="batch-template-select" onchange="onTemplateSelected('batch')" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="">Carregando templates da Meta...</option>
+              </select>
+              <input type="text" id="batch-template-name" value="20261023_wpp_20off_evo" class="hidden w-full text-sm mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Digite o nome do template...">
+              <div id="batch-template-badge" class="mt-2 text-xs p-2.5 rounded-lg border hidden"></div>
             </div>
 
             <div>
@@ -305,17 +321,18 @@
               </select>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">URL Imagem do Cabeçalho (Opcional)</label>
+            <div id="batch-header-image-container">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">URL Imagem do Cabeçalho</label>
               <input type="url" id="batch-header-image" placeholder="https://exemplo.com/banner-promocional.jpg"
                 class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              <span class="text-[10px] text-slate-400">Usada se o template contiver header de imagem (ou como fallback caso o CSV não defina link por linha).</span>
+              <span id="batch-header-hint" class="text-[10px] text-slate-400">Usada se o template contiver header de imagem.</span>
             </div>
 
-            <div>
+            <div id="batch-params-container">
               <label class="block text-xs font-semibold text-slate-600 mb-1">Parâmetros das Variáveis (opcional)</label>
               <input type="text" id="batch-template-params" placeholder="ex: Mensagem Geral, Promoção"
                 class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <span id="batch-params-hint" class="text-[10px] text-slate-400">Usado se o template possuir variáveis no corpo.</span>
             </div>
 
             <button onclick="startBatchSend()" id="btn-send-batch"
@@ -453,6 +470,7 @@
         if (currentPhone && currentToken) {
           badge.className = 'text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium';
           badge.innerHTML = `<i class="fa-solid fa-check mr-1"></i> Credenciais Prontas (.env)`;
+          loadMetaTemplates();
         } else {
           badge.className = 'text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-medium';
           badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Informe as Credenciais`;
@@ -467,6 +485,139 @@
         phoneNumberId: document.getElementById('phone-number-id').value.trim(),
         accessToken: document.getElementById('access-token').value.trim()
       };
+    }
+
+    // Gerenciamento e Cache de Templates da Meta
+    let cachedTemplates = [];
+
+    async function loadMetaTemplates() {
+      try {
+        const { accessToken } = getCredentials();
+        const query = accessToken ? `?accessToken=${encodeURIComponent(accessToken)}` : '';
+        const res = await fetch(`/api/templates${query}`);
+        const data = await res.json();
+        if (data.success && data.templates && data.templates.length > 0) {
+          cachedTemplates = data.templates;
+          populateTemplateSelects();
+        } else if (!data.success) {
+          console.warn('Erro ao listar templates:', data.error);
+        }
+      } catch (err) {
+        console.warn('Não foi possível sincronizar templates com a Meta:', err.message);
+      }
+    }
+
+    function populateTemplateSelects() {
+      ['single', 'batch'].forEach(prefix => {
+        const select = document.getElementById(`${prefix}-template-select`);
+        const nameInput = document.getElementById(`${prefix}-template-name`);
+        if (!select || !nameInput) return;
+
+        const currentVal = nameInput.value || '';
+        select.innerHTML = '';
+
+        cachedTemplates.forEach(t => {
+          const imgTag = t.requiresImage ? '🖼️ [COM IMAGEM]' : '📝 [SEM IMAGEM]';
+          const label = `${t.name} ${imgTag}`;
+          const opt = new Option(label, t.name);
+          select.add(opt);
+        });
+
+        const manualOpt = new Option('✍️ Outro (digitar manualmente...)', '__manual__');
+        select.add(manualOpt);
+
+        if (cachedTemplates.some(t => t.name === currentVal)) {
+          select.value = currentVal;
+        } else if (cachedTemplates.some(t => t.name === '20261023_wpp_20off_evo')) {
+          select.value = '20261023_wpp_20off_evo';
+        } else {
+          select.selectedIndex = 0;
+        }
+
+        onTemplateSelected(prefix);
+      });
+    }
+
+    function onTemplateSelected(prefix) {
+      const select = document.getElementById(`${prefix}-template-select`);
+      const nameInput = document.getElementById(`${prefix}-template-name`);
+      const badge = document.getElementById(`${prefix}-template-badge`);
+      const headerContainer = document.getElementById(`${prefix}-header-image-container`);
+      const headerInput = document.getElementById(prefix === 'single' ? 'single-template-header-image' : 'batch-header-image');
+      const paramsContainer = document.getElementById(`${prefix}-params-container`);
+      const paramsInput = document.getElementById(prefix === 'single' ? 'single-template-params' : 'batch-template-params');
+
+      if (!select || !nameInput) return;
+
+      const val = select.value;
+      badge.classList.remove('hidden');
+
+      if (val === '__manual__') {
+        nameInput.classList.remove('hidden');
+        nameInput.focus();
+        badge.className = 'mt-2 text-xs p-2.5 rounded-lg border bg-amber-50 text-amber-800 border-amber-200';
+        badge.innerHTML = '<i class="fa-solid fa-pen mr-1"></i> Digite o nome exato do template aprovado no WhatsApp Manager.';
+        if (headerContainer) headerContainer.classList.remove('opacity-40', 'pointer-events-none');
+        if (headerInput) headerInput.disabled = false;
+        if (paramsContainer) paramsContainer.classList.remove('opacity-40', 'pointer-events-none');
+        if (paramsInput) paramsInput.disabled = false;
+        return;
+      }
+
+      nameInput.classList.add('hidden');
+      nameInput.value = val;
+
+      const tpl = cachedTemplates.find(t => t.name === val);
+      if (!tpl) return;
+
+      // Configuração de Imagem do Cabeçalho
+      if (tpl.requiresImage) {
+        badge.className = 'mt-2 text-xs p-2.5 rounded-lg border bg-blue-50 text-blue-800 border-blue-200 space-y-1';
+        badge.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-image text-blue-600"></i> Template COM IMAGEM DE CABEÇALHO</div>
+          <div class="text-[11px] text-blue-700">Este template <strong>obriga</strong> uma URL de imagem pública. Informe o link abaixo.</div>
+        `;
+        if (headerContainer) headerContainer.classList.remove('opacity-40', 'pointer-events-none');
+        if (headerInput) {
+          headerInput.disabled = false;
+          headerInput.placeholder = 'https://exemplo.com/banner.jpg (Obrigatório)';
+        }
+      } else {
+        badge.className = 'mt-2 text-xs p-2.5 rounded-lg border bg-emerald-50 text-emerald-800 border-emerald-200 space-y-1';
+        badge.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-align-left text-emerald-600"></i> Template de TEXTO PURO (SEM IMAGEM)</div>
+          <div class="text-[11px] text-emerald-700">Envio somente texto. Não passe imagem nem atributos extras.</div>
+        `;
+        if (headerContainer) headerContainer.classList.add('opacity-40', 'pointer-events-none');
+        if (headerInput) {
+          headerInput.disabled = true;
+          headerInput.value = '';
+          headerInput.placeholder = 'Desabilitado (template não aceita imagem)';
+        }
+      }
+
+      // Configuração de Variáveis {{1}}
+      if (tpl.variableCount === 0) {
+        if (paramsContainer) paramsContainer.classList.add('opacity-40', 'pointer-events-none');
+        if (paramsInput) {
+          paramsInput.disabled = true;
+          paramsInput.value = '';
+          paramsInput.placeholder = 'Desabilitado (template não possui variáveis {{1}})';
+        }
+        if (prefix === 'batch') {
+          const colParam1 = document.getElementById('csv-col-param1');
+          if (colParam1) colParam1.value = '';
+          if (typeof mapCsvColumns === 'function' && parsedCsvData && parsedCsvData.rows && parsedCsvData.rows.length > 0) {
+            mapCsvColumns();
+          }
+        }
+      } else {
+        if (paramsContainer) paramsContainer.classList.remove('opacity-40', 'pointer-events-none');
+        if (paramsInput) {
+          paramsInput.disabled = false;
+          paramsInput.placeholder = `Informe ${tpl.variableCount} variável(is) separadas por vírgula`;
+        }
+      }
     }
 
     // 1. Disparo Único
@@ -484,15 +635,24 @@
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
 
+      const currentTplName = document.getElementById('single-template-name').value.trim();
+      const currentTpl = cachedTemplates.find(t => t.name === currentTplName);
+      const allowParams = !currentTpl || currentTpl.variableCount > 0;
+      const allowHeaderImg = !currentTpl || currentTpl.requiresImage;
+
       const payload = {
         phoneNumberId,
         accessToken,
         recipient,
         type,
-        templateName: document.getElementById('single-template-name').value.trim(),
+        templateName: currentTplName,
         templateLang: document.getElementById('single-template-lang').value,
-        templateParams: document.getElementById('single-template-params').value.split(',').map(s => s.trim()).filter(Boolean),
-        headerImageUrl: document.getElementById('single-template-header-image').value.trim(),
+        templateParams: (type === 'template' && allowParams) 
+          ? document.getElementById('single-template-params').value.split(',').map(s => s.trim()).filter(Boolean) 
+          : [],
+        headerImageUrl: (type === 'template' && allowHeaderImg)
+          ? document.getElementById('single-template-header-image').value.trim()
+          : '',
         imageUrl: document.getElementById('single-image-url').value.trim(),
         imageCaption: document.getElementById('single-image-caption').value.trim(),
         textMessage: document.getElementById('single-text-message').value.trim()
@@ -660,18 +820,24 @@
         </tbody>
       `;
 
+      // Validar permissões do template selecionado
+      const currentTplName = document.getElementById('batch-template-name').value.trim();
+      const currentTpl = cachedTemplates.find(t => t.name === currentTplName);
+      const allowParams = !currentTpl || currentTpl.variableCount > 0;
+      const allowHeaderImg = !currentTpl || currentTpl.requiresImage;
+
       parsedCsvData.rows.forEach(row => {
         const cleanPhone = (row[phoneIdx] || '').replace(/\D/g, '');
         if (cleanPhone.length >= 10) {
           const params = [];
-          if (param1Idx !== null && row[param1Idx]) {
-            params.push(row[param1Idx]);
+          if (allowParams && param1Idx !== null && row[param1Idx]) {
+            params.push(String(row[param1Idx]).trim());
           }
           const item = {
             phone: cleanPhone,
             params: params
           };
-          if (headerImgIdx !== null && row[headerImgIdx]) {
+          if (allowHeaderImg && headerImgIdx !== null && row[headerImgIdx]) {
             item.headerImageUrl = row[headerImgIdx].trim();
           }
           csvMappedContacts.push(item);
@@ -712,16 +878,25 @@
       progressText.innerText = `Enviando para ${recipientsList.length} contatos...`;
       resultsList.innerHTML = '';
 
+      const currentTplName = document.getElementById('batch-template-name').value.trim();
+      const currentTpl = cachedTemplates.find(t => t.name === currentTplName);
+      const allowParams = !currentTpl || currentTpl.variableCount > 0;
+      const allowHeaderImg = !currentTpl || currentTpl.requiresImage;
+
       const payload = {
         phoneNumberId,
         accessToken,
         recipients: recipientsList,
         delaySeconds: parseFloat(document.getElementById('batch-delay').value) || 2,
         type: 'template',
-        templateName: document.getElementById('batch-template-name').value.trim(),
+        templateName: currentTplName,
         templateLang: document.getElementById('batch-template-lang').value,
-        templateParams: document.getElementById('batch-template-params').value.split(',').map(s => s.trim()).filter(Boolean),
-        headerImageUrl: document.getElementById('batch-header-image').value.trim()
+        templateParams: allowParams 
+          ? document.getElementById('batch-template-params').value.split(',').map(s => s.trim()).filter(Boolean) 
+          : [],
+        headerImageUrl: allowHeaderImg 
+          ? document.getElementById('batch-header-image').value.trim() 
+          : ''
       };
 
       try {

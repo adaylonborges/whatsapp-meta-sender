@@ -42,11 +42,11 @@ async function sendToMetaWhatsApp({ phoneNumberId, accessToken, payload }) {
 
   const data = await response.json();
   if (!response.ok) {
-    const errorDetails = data.error?.error_user_msg 
-      || data.error?.message 
-      || JSON.stringify(data);
-    const fbTraceId = data.error?.fbtrace_id ? ` (Trace: ${data.error.fbtrace_id})` : '';
-    throw new Error(`${errorDetails}${fbTraceId}`);
+    const errorMsg = data.error?.message || 'Erro desconhecido na Meta API';
+    const detailMsg = data.error?.error_data?.details ? `: ${data.error.error_data.details}` : '';
+    const userMsg = data.error?.error_user_msg ? ` (${data.error.error_user_msg})` : '';
+    const fbTraceId = data.error?.fbtrace_id ? ` [Trace: ${data.error.fbtrace_id}]` : '';
+    throw new Error(`${errorMsg}${detailMsg}${userMsg}${fbTraceId}`);
   }
   return data;
 }
@@ -63,8 +63,63 @@ app.get('/api/config', (req, res) => {
     phoneNumberId: process.env.META_PHONE_NUMBER_ID || '',
     hasAccessToken: !!process.env.META_ACCESS_TOKEN,
     accessToken: process.env.META_ACCESS_TOKEN || '',
+    hasWabaId: !!process.env.META_WABA_ID,
+    wabaId: process.env.META_WABA_ID || '1024545617120343',
     webhookVerifyToken: process.env.WEBHOOK_VERIFY_TOKEN || 'meu_token_secreto_webhook_123'
   });
+});
+
+// 1.1 Rota para Listar Templates Aprovados da WABA
+app.get('/api/templates', async (req, res) => {
+  try {
+    const accessToken = req.query.accessToken || process.env.META_ACCESS_TOKEN;
+    const wabaId = req.query.wabaId || process.env.META_WABA_ID || '1024545617120343';
+
+    if (!accessToken || !wabaId) {
+      return res.status(400).json({ success: false, error: 'Access Token e WABA ID são obrigatórios.' });
+    }
+
+    const url = `https://graph.facebook.com/v21.0/${wabaId}/message_templates?limit=100`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Erro ao carregar templates da Meta');
+    }
+
+    const templates = (data.data || []).map(t => {
+      const headerComponent = t.components?.find(c => c.type === 'HEADER');
+      const bodyComponent = t.components?.find(c => c.type === 'BODY');
+      const buttonComponent = t.components?.find(c => c.type === 'BUTTONS');
+
+      const headerFormat = headerComponent?.format || null;
+      const requiresImage = headerFormat === 'IMAGE';
+
+      const bodyText = bodyComponent?.text || '';
+      const variableMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
+      const variableCount = [...new Set(variableMatches)].length;
+
+      return {
+        name: t.name,
+        status: t.status,
+        language: t.language,
+        category: t.category,
+        requiresImage,
+        headerFormat,
+        variableCount,
+        hasButtons: !!buttonComponent,
+        previewText: bodyText.substring(0, 100)
+      };
+    });
+
+    res.json({ success: true, templates });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 
@@ -112,7 +167,7 @@ app.post('/api/send-single', async (req, res) => {
       const components = [];
 
       // Imagem no Cabeçalho (Header) do Template (se fornecido)
-      if (headerImageUrl && headerImageUrl.trim()) {
+      if (headerImageUrl && typeof headerImageUrl === 'string' && headerImageUrl.trim().length > 0) {
         components.push({
           type: 'header',
           parameters: [
@@ -124,11 +179,15 @@ app.post('/api/send-single', async (req, res) => {
         });
       }
 
-      // Parâmetros das variáveis do corpo (Body)
-      if (templateParams && templateParams.length > 0) {
+      // Parâmetros das variáveis do corpo (Body) - apenas valores não vazios
+      const validParams = (templateParams || [])
+        .map(param => String(param !== null && param !== undefined ? param : '').trim())
+        .filter(text => text.length > 0);
+
+      if (validParams.length > 0) {
         components.push({
           type: 'body',
-          parameters: templateParams.map(param => ({ type: 'text', text: String(param) }))
+          parameters: validParams.map(text => ({ type: 'text', text }))
         });
       }
 
@@ -246,7 +305,7 @@ app.post('/api/send-batch', async (req, res) => {
 
         const components = [];
         const currentHeaderImg = contact.headerImageUrl || headerImageUrl;
-        if (currentHeaderImg && String(currentHeaderImg).trim()) {
+        if (currentHeaderImg && String(currentHeaderImg).trim().length > 0) {
           components.push({
             type: 'header',
             parameters: [
@@ -258,11 +317,15 @@ app.post('/api/send-batch', async (req, res) => {
           });
         }
 
-        const currentParams = contact.params || [];
-        if (currentParams.length > 0) {
+        // Parâmetros das variáveis do corpo (Body) - apenas valores não vazios
+        const validParams = (contact.params || [])
+          .map(param => String(param !== null && param !== undefined ? param : '').trim())
+          .filter(text => text.length > 0);
+
+        if (validParams.length > 0) {
           components.push({
             type: 'body',
-            parameters: currentParams.map(param => ({ type: 'text', text: String(param) }))
+            parameters: validParams.map(text => ({ type: 'text', text }))
           });
         }
 
