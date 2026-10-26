@@ -117,9 +117,16 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// 1.1 Rota para Listar Templates Aprovados da WABA
+// 1.1 Rota para Listar Templates Aprovados da WABA (Sincronização em tempo real)
 app.get('/api/templates', async (req, res) => {
   try {
+    // Garante que o navegador e intermediários nunca usem cache para templates da Meta
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     const accessToken = req.query.accessToken || process.env.META_ACCESS_TOKEN;
     const wabaId = req.query.wabaId || process.env.META_WABA_ID || '1024545617120343';
 
@@ -146,13 +153,8 @@ app.get('/api/templates', async (req, res) => {
 
       const headerFormat = headerComponent?.format || null;
       const requiresImage = headerFormat === 'IMAGE';
+      // URL direta e dinâmica da imagem de exemplo aprovada no WhatsApp Manager da Meta
       const defaultImageUrl = headerComponent?.example?.header_handle?.[0] || null;
-      
-      const knownMediaIds = {
-        '20261023_wpp_20off_evo_img_pt': '1475671457712153',
-        '20261023_wpp_20off_vomero_img': '3393562647512994'
-      };
-      const defaultMediaId = knownMediaIds[t.name] || null;
 
       const bodyText = bodyComponent?.text || '';
       const variableMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
@@ -166,7 +168,7 @@ app.get('/api/templates', async (req, res) => {
         requiresImage,
         headerFormat,
         defaultImageUrl,
-        defaultMediaId,
+        defaultMediaId: null, // Sem IDs hardcoded para não sobrepor alterações da Meta
         variableCount,
         hasButtons: !!buttonComponent,
         buttons: buttonComponent?.buttons || [],
@@ -175,7 +177,7 @@ app.get('/api/templates', async (req, res) => {
       };
     });
 
-    res.json({ success: true, templates });
+    res.json({ success: true, templates, count: templates.length, syncedAt: new Date().toISOString() });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

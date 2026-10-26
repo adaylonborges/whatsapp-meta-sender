@@ -283,7 +283,7 @@
             <div>
               <div class="flex justify-between items-center mb-1">
                 <label class="block text-xs font-semibold text-slate-700">Template Aprovado na Meta</label>
-                <button type="button" onclick="loadMetaTemplates()" class="text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1">
+                <button type="button" onclick="loadMetaTemplates(true)" class="sync-templates-btn text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1 transition-colors">
                   <i class="fa-solid fa-arrows-rotate"></i> Atualizar Templates
                 </button>
               </div>
@@ -620,7 +620,12 @@
             </h4>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Template da Meta</label>
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-xs font-semibold text-slate-700">Template da Meta</label>
+                <button type="button" onclick="loadMetaTemplates(true)" class="sync-templates-btn text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1 transition-colors">
+                  <i class="fa-solid fa-arrows-rotate"></i> Atualizar Templates
+                </button>
+              </div>
               <select id="batch-template-select" onchange="onTemplateSelected('batch')" class="w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 <option value="">Carregando templates da Meta...</option>
               </select>
@@ -759,7 +764,6 @@
         language: 'pt_BR',
         category: 'MARKETING',
         requiresImage: true,
-        defaultMediaId: '1321074129207865',
         variableCount: 0,
         hasButtons: true,
         buttons: [{ type: 'URL', text: 'Bora pro app!', url: 'https://spoint.onelink.me/M2OO/5yo0ta1g' }],
@@ -784,7 +788,6 @@
         language: 'pt_BR',
         category: 'MARKETING',
         requiresImage: true,
-        defaultMediaId: '1321074129207865',
         variableCount: 0,
         hasButtons: true,
         buttons: [{ type: 'URL', text: 'Eu quero!', url: 'https://spoint.onelink.me/M2OO/5yo0ta1g' }],
@@ -802,11 +805,17 @@
       loadSavedCredentials();
       populateTemplateSelects();
       updateWhatsAppPreview();
-      checkBackendConfig();
+      checkBackendConfig().then(() => {
+        loadMetaTemplates(false);
+      });
       loadMetrics();
       loadLogs();
       setInterval(loadMetrics, 6000);
       setInterval(loadLogs, 6000);
+      setInterval(() => loadMetaTemplates(false), 20000);
+      window.addEventListener('focus', () => {
+        loadMetaTemplates(false);
+      });
     });
 
     function toggleCredentials() {
@@ -1005,14 +1014,20 @@
         // Header Imagem
         if (tpl && tpl.requiresImage) {
           mediaContainer.classList.remove('hidden');
-          if (headerImgVal && headerImgVal.startsWith('http')) {
-            mediaImg.src = headerImgVal;
+          const resolvedImg = headerImgVal || tpl.defaultImageUrl;
+          if (resolvedImg && (resolvedImg.startsWith('http://') || resolvedImg.startsWith('https://') || resolvedImg.startsWith('data:'))) {
+            mediaImg.src = resolvedImg;
             mediaImg.classList.remove('hidden');
             mediaPlaceholder.classList.add('hidden');
-          } else if (headerImgVal) {
+            mediaImg.onerror = () => {
+              mediaImg.classList.add('hidden');
+              mediaPlaceholder.classList.remove('hidden');
+              mediaPlaceholder.innerHTML = `<i class="fa-solid fa-image text-2xl text-slate-400 mb-1"></i><span class="text-xs text-slate-500">Imagem da Meta</span>`;
+            };
+          } else if (resolvedImg) {
             mediaImg.classList.add('hidden');
             mediaPlaceholder.classList.remove('hidden');
-            mediaPlaceholder.innerHTML = `<i class="fa-solid fa-image text-2xl text-emerald-600 mb-1"></i><span>Media ID: <strong>${headerImgVal}</strong></span><span class="text-[9px] text-slate-400">(Aprovado no catálogo Meta)</span>`;
+            mediaPlaceholder.innerHTML = `<i class="fa-solid fa-image text-2xl text-emerald-600 mb-1"></i><span>Media ID: <strong>${resolvedImg}</strong></span><span class="text-[9px] text-slate-400">(Aprovado no catálogo Meta)</span>`;
           } else {
             mediaImg.classList.add('hidden');
             mediaPlaceholder.classList.remove('hidden');
@@ -1195,21 +1210,48 @@
       }
     }
 
-    // Gerenciamento e Cache de Templates da Meta
-    async function loadMetaTemplates() {
+    // Gerenciamento e Cache de Templates da Meta com Auto-Sincronização
+    let isFetchingTemplates = false;
+    async function loadMetaTemplates(showToast = false) {
+      if (isFetchingTemplates) return;
+      isFetchingTemplates = true;
+
+      document.querySelectorAll('.sync-templates-btn i').forEach(el => el.classList.add('fa-spin'));
+
       try {
         const { accessToken } = getCredentials();
-        const query = accessToken ? `?accessToken=${encodeURIComponent(accessToken)}` : '';
-        const res = await fetch(`/api/templates${query}`);
+        const queryParams = new URLSearchParams();
+        queryParams.set('t', Date.now());
+        if (accessToken) queryParams.set('accessToken', accessToken);
+
+        const res = await fetch(`/api/templates?${queryParams.toString()}`, {
+          cache: 'no-store',
+          headers: {
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache'
+          }
+        });
         const data = await res.json();
-        if (data.success && data.templates && data.templates.length > 0) {
+        if (data.success && Array.isArray(data.templates) && data.templates.length > 0) {
           cachedTemplates = data.templates;
           populateTemplateSelects();
+          if (showToast) {
+            alert(`✅ ${data.templates.length} templates sincronizados diretamente da Meta com sucesso!`);
+          }
         } else if (!data.success) {
-          console.warn('Erro ao listar templates:', data.error);
+          console.warn('Erro ao listar templates da Meta:', data.error);
+          if (showToast) {
+            alert(`Aviso ao consultar templates da Meta: ${data.error || 'Erro desconhecido'}`);
+          }
         }
       } catch (err) {
         console.warn('Não foi possível sincronizar templates com a Meta:', err.message);
+        if (showToast) {
+          alert(`Erro na sincronização de templates: ${err.message}`);
+        }
+      } finally {
+        isFetchingTemplates = false;
+        document.querySelectorAll('.sync-templates-btn i').forEach(el => el.classList.remove('fa-spin'));
       }
     }
 
@@ -1219,7 +1261,7 @@
         const nameInput = document.getElementById(`${prefix}-template-name`);
         if (!select || !nameInput) return;
 
-        const currentVal = nameInput.value || '';
+        const currentVal = select.value || nameInput.value || '';
         select.innerHTML = '';
 
         cachedTemplates.forEach(t => {
@@ -1282,17 +1324,13 @@
         badge.className = 'mt-2 text-xs p-2.5 rounded-lg border bg-blue-50 text-blue-800 border-blue-200 space-y-1';
         badge.innerHTML = `
           <div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-image text-blue-600"></i> Template COM IMAGEM DE CABEÇALHO</div>
-          <div class="text-[11px] text-blue-700">Preenchido com o <strong>Media ID oficial aprovado</strong> na Meta (ou faça upload direto ao lado).</div>
+          <div class="text-[11px] text-blue-700">Mídia sincronizada da Meta preenchida automaticamente (ou informe uma URL/faça upload ao lado).</div>
         `;
         if (headerContainer) headerContainer.classList.remove('opacity-40', 'pointer-events-none');
         if (headerInput) {
           headerInput.disabled = false;
           headerInput.placeholder = 'Media ID ou URL https:// (Obrigatório)';
-          if (tpl.defaultMediaId) {
-            headerInput.value = tpl.defaultMediaId;
-          } else if (tpl.defaultImageUrl && !headerInput.value) {
-            headerInput.value = tpl.defaultImageUrl;
-          }
+          headerInput.value = tpl.defaultImageUrl || tpl.defaultMediaId || '';
         }
       } else {
         badge.className = 'mt-2 text-xs p-2.5 rounded-lg border bg-emerald-50 text-emerald-800 border-emerald-200 space-y-1';
