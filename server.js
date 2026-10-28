@@ -14,6 +14,49 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 16 * 1024 * 1024 } // 16MB max
 });
+const mediaCache = new Map();
+
+async function resolveMediaId(imageUrl, phoneNumberId, accessToken) {
+  if (!imageUrl) return null;
+  const val = imageUrl.trim();
+  if (/^\d+$/.test(val)) return val;
+
+  if (val.includes("scontent.whatsapp.net") || val.includes("fbcdn.net")) {
+    if (mediaCache.has(val)) return mediaCache.get(val);
+
+    try {
+      const imgRes = await fetch(val);
+      if (!imgRes.ok) throw new Error(`Download failed: ${imgRes.statusText}`);
+      
+      const buffer = await imgRes.arrayBuffer();
+      const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+      
+      const formData = new FormData();
+      formData.append("file", new Blob([buffer], { type: contentType }), "media_upload.jpg");
+      formData.append("messaging_product", "whatsapp");
+      formData.append("type", contentType);
+
+      const upRes = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/media`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${accessToken}` },
+        body: formData
+      });
+      
+      const upData = await upRes.json();
+      if (!upRes.ok) throw new Error(upData.error?.message || "Meta API upload error");
+      
+      const mediaId = upData.id;
+      mediaCache.set(val, mediaId);
+      setTimeout(() => mediaCache.delete(val), 24 * 60 * 60 * 1000);
+      return mediaId;
+    } catch (err) {
+      console.error("[resolveMediaId] Erro ao converter scontent URL em Media ID:", err.message);
+      return val;
+    }
+  }
+  return val;
+}
+
 
 app.use(cors());
 app.use(express.json());
@@ -376,7 +419,7 @@ app.post('/api/send-single', async (req, res) => {
 
       // Imagem no Cabeçalho (Header) do Template (se fornecido)
       if (headerImageUrl && typeof headerImageUrl === 'string' && headerImageUrl.trim().length > 0) {
-        const imgVal = headerImageUrl.trim();
+        const imgVal = await resolveMediaId(headerImageUrl.trim(), phoneNumberId, accessToken);
         const isMediaId = /^\d+$/.test(imgVal);
         components.push({
           type: 'header',
@@ -410,9 +453,12 @@ app.post('/api/send-single', async (req, res) => {
         return res.status(400).json({ success: false, error: 'URL da imagem é obrigatória.' });
       }
       payload.type = 'image';
-      payload.image = {
-        link: imageUrl.trim()
-      };
+      
+      const imgVal = await resolveMediaId(imageUrl.trim(), phoneNumberId, accessToken);
+      const isMediaId = /^\d+$/.test(imgVal);
+      
+      payload.image = isMediaId ? { id: imgVal } : { link: imgVal };
+      
       if (imageCaption && imageCaption.trim()) {
         payload.image.caption = imageCaption.trim();
       }
@@ -538,7 +584,7 @@ app.post('/api/send-batch', async (req, res) => {
         const components = [];
         const currentHeaderImg = contact.headerImageUrl || headerImageUrl;
         if (currentHeaderImg && String(currentHeaderImg).trim().length > 0) {
-          const imgVal = String(currentHeaderImg).trim();
+          const imgVal = await resolveMediaId(String(currentHeaderImg).trim(), phoneNumberId, accessToken);
           const isMediaId = /^\d+$/.test(imgVal);
           components.push({
             type: 'header',
@@ -572,8 +618,12 @@ app.post('/api/send-batch', async (req, res) => {
           results.push({ phone: contact.phone, status: 'failed', error: 'URL da imagem não informada' });
           continue;
         }
+        
         payload.type = 'image';
-        payload.image = { link: String(currentImg).trim() };
+        const imgVal = await resolveMediaId(String(currentImg).trim(), phoneNumberId, accessToken);
+        const isMediaId = /^\d+$/.test(imgVal);
+        payload.image = isMediaId ? { id: imgVal } : { link: imgVal };
+        
         const currentCaption = contact.imageCaption || imageCaption;
         if (currentCaption && String(currentCaption).trim()) {
           payload.image.caption = String(currentCaption).trim();
